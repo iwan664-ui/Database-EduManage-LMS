@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { DatabaseState, KehadiranStatus, MasterKelas } from '../../types';
 import { useToast } from '../Toast';
+import { StudentReportModal } from '../student/StudentReportModal';
 import {
   Users,
   GraduationCap,
@@ -18,6 +19,7 @@ import {
   ChevronDown,
   X,
   RotateCcw,
+  Award,
 } from 'lucide-react';
 
 interface AdminMonitoringProps {
@@ -33,6 +35,7 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
   const [selectedMapel, setSelectedMapel] = useState<string>('all');
   const [selectedGuru, setSelectedGuru] = useState<string>('all');
   const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
+  const [selectedStudentForReport, setSelectedStudentForReport] = useState<string | null>(null);
 
   // Class Lookup Map
   const classMap = useMemo(() => {
@@ -564,6 +567,15 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
                         </span>
                       ))}
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedStudentForReport(s.siswa)}
+                      className="mt-2.5 w-full py-1.5 px-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors border border-indigo-200"
+                    >
+                      <Award className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>E-Rapor, Piagam & WA</span>
+                    </button>
                   </div>
                 );
               })}
@@ -682,6 +694,17 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
           </div>
         </div>
       </div>
+
+      {/* Student E-Rapor Digital, Piagam & WhatsApp Broadcaster Modal */}
+      {selectedStudentForReport && (
+        <StudentReportModal
+          isOpen={Boolean(selectedStudentForReport)}
+          onClose={() => setSelectedStudentForReport(null)}
+          studentName={selectedStudentForReport}
+          database={database}
+          initialTab="rapor"
+        />
+      )}
     </div>
   );
 }

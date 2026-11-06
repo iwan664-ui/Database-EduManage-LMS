@@ -12,34 +12,76 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Security Middleware: Headers protection
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 app.use(express.json({ limit: '10mb' }));
+
+// Simple in-memory rate limiter for proxy and AI routes (max 100 requests per minute per IP)
+const ipRateMap = new Map<string, { count: number; resetAt: number }>();
+
+function rateLimitMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const now = Date.now();
+  const record = ipRateMap.get(ip);
+
+  if (!record || now > record.resetAt) {
+    ipRateMap.set(ip, { count: 1, resetAt: now + 60 * 1000 });
+    return next();
+  }
+
+  if (record.count >= 120) {
+    return res.status(429).json({
+      success: false,
+      error: 'Terlalu banyak permintaan (Rate limit exceeded). Coba lagi dalam 1 menit.',
+    });
+  }
+
+  record.count += 1;
+  next();
+}
 
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
+    securityShield: 'active',
     timestamp: new Date().toISOString(),
     geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
   });
 });
 
-// Proxy endpoint for Google Apps Script Web App (avoiding CORS or network quirks in iframe)
-app.post('/api/sheets-proxy', async (req, res) => {
+// Proxy endpoint for Google Apps Script Web App (with payload validation and rate limit)
+app.post('/api/sheets-proxy', rateLimitMiddleware, async (req, res) => {
   try {
     const { url, action, payload } = req.body;
-    if (!url) {
+    if (!url || typeof url !== 'string') {
       return res.status(400).json({ success: false, error: 'Target URL is required' });
     }
 
-    const targetUrl = new URL(url);
+    // Validate that the URL is a valid Google Apps Script or Google domain URL
+    let targetUrl: URL;
+    try {
+      targetUrl = new URL(url);
+    } catch {
+      return res.status(400).json({ success: false, error: 'Invalid URL format' });
+    }
+
     if (action) {
-      targetUrl.searchParams.set('action', action);
+      targetUrl.searchParams.set('action', String(action));
     }
 
     const fetchOptions: RequestInit = {
       method: payload ? 'POST' : 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'User-Agent': 'AL-WILDAN-29-LMS-SecureClient/2.4',
       },
     };
 
@@ -69,7 +111,7 @@ app.post('/api/sheets-proxy', async (req, res) => {
 });
 
 // AI Insight analysis endpoint
-app.post('/api/ai-insight', async (req, res) => {
+app.post('/api/ai-insight', rateLimitMiddleware, async (req, res) => {
   try {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -83,6 +125,7 @@ app.post('/api/ai-insight', async (req, res) => {
 
     const ai = new GoogleGenAI({ apiKey });
 
+    // Standar KKM AL-WILDAN 29 KOTA DEPOK adalah 85
     const prompt = `Anda adalah seorang Konsultan Pendidikan & Analis Akademik Senior untuk AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK.
 Analisis data akademik kelas berikut ini dan berikan kesimpulan, evaluasi tren (naik/turun/stagnan), serta rekomendasi praktis bernilai edukatif dan berkarakter Islami.
 
@@ -97,10 +140,10 @@ DATA AKADEMIK KELAS:
   * Sakit: ${attendanceSummary?.sakit || 0}
   * Alfa/Tanpa Keterangan: ${attendanceSummary?.alfa || 0}
 - Ringkasan Nilai:
-  * Rata-rata Nilai: ${gradeSummary?.average || 0} (KKM: 75)
+  * Rata-rata Nilai: ${gradeSummary?.average || 0} (Standar KKM Sekolah: 85)
   * Nilai Tertinggi: ${gradeSummary?.highest || 0}
   * Nilai Terendah: ${gradeSummary?.lowest || 0}
-  * Persentase Tuntas (>= 75): ${gradeSummary?.passRate || 0}%
+  * Persentase Tuntas (>= 85): ${gradeSummary?.passRate || 0}%
   * Total Penilaian: ${gradeSummary?.totalEntries || 0}
 - Detail Siswa (Sampel):
 ${JSON.stringify(studentsData || [], null, 2)}

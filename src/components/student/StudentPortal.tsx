@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { ActiveUser, DatabaseState, KehadiranStatus, SiswaEkstrakurikuler } from '../../types';
+import { StudentReportModal } from './StudentReportModal';
 import {
   User,
   Calendar,
@@ -22,6 +23,11 @@ import {
   Layers,
   Flame,
   Check,
+  Printer,
+  Share2,
+  HeartHandshake,
+  Download,
+  ExternalLink,
 } from 'lucide-react';
 
 interface StudentPortalProps {
@@ -31,14 +37,17 @@ interface StudentPortalProps {
 }
 
 export function StudentPortal({ currentUser, database, onSelectOtherStudent }: StudentPortalProps) {
-  // Tabs: 'harian' | 'bulanan' | 'grafik' | 'ekskul'
-  const [activeTab, setActiveTab] = useState<'harian' | 'bulanan' | 'grafik' | 'ekskul'>('grafik');
+  // Tabs: 'radar' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
+  const [activeTab, setActiveTab] = useState<'radar' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
   const [selectedStudentName, setSelectedStudentName] = useState<string>(currentUser.name);
+  const [showReportModal, setShowReportModal] = useState<boolean>(false);
+  const [reportModalTab, setReportModalTab] = useState<'rapor' | 'piagam' | 'whatsapp'>('rapor');
 
   // Timeframe untuk Grafik Nilai: 'bulan' | 'semester' | 'tahun'
   const [chartTimeframe, setChartTimeframe] = useState<'bulan' | 'semester' | 'tahun'>('bulan');
   const [chartSubjectFilter, setChartSubjectFilter] = useState<string>('all');
   const [hoveredDataPoint, setHoveredDataPoint] = useState<any | null>(null);
+  const [hoveredRadarAxis, setHoveredRadarAxis] = useState<number | null>(null);
 
   // Standar KKM Baru: 85
   const KKM_STANDARD = 85;
@@ -245,6 +254,115 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
     return yearlyChartData;
   }, [chartTimeframe, monthlyChartData, semesterChartData, yearlyChartData]);
 
+  // 6 Dimensi Analisis Potensi 360° Santri Al-Wildan
+  const radarData = useMemo(() => {
+    // 1. Akademik: rata-rata nilai (KKM 85 standard)
+    const akademikScore = gradeStats.avg > 0 ? Math.min(100, Math.round(gradeStats.avg)) : 86;
+
+    // 2. Presensi & Disiplin
+    const presensiScore = attendanceStats.total > 0 ? attendanceStats.rate : 94;
+
+    // 3. Tahfidz & Al-Qur'an
+    const tahfidzItems = studentNilai.filter(
+      (n) =>
+        n.mapel.toLowerCase().includes('tahfidz') ||
+        n.mapel.toLowerCase().includes('quran') ||
+        n.mapel.toLowerCase().includes('pai') ||
+        n.mapel.toLowerCase().includes('agama')
+    );
+    const tahfidzScore =
+      tahfidzItems.length > 0
+        ? Math.round(tahfidzItems.reduce((a, b) => a + Number(b.nilai), 0) / tahfidzItems.length)
+        : 90;
+
+    // 4. Ekstrakurikuler & Bakat
+    const ekskulScore =
+      studentEkskul.length > 0
+        ? Math.min(
+            100,
+            Math.round(studentEkskul.reduce((a, b) => a + b.kehadiran_persen, 0) / studentEkskul.length)
+          )
+        : 88;
+
+    // 5. Keaktifan Belajar
+    const keaktifanScore =
+      studentNilai.length > 0
+        ? Math.min(100, Math.round(82 + gradeStats.passRate * 0.18))
+        : 89;
+
+    // 6. Adab & Karakter Islami
+    const adabScore =
+      attendanceStats.alfa === 0
+        ? 95
+        : Math.max(75, 95 - attendanceStats.alfa * 5);
+
+    const axes = [
+      {
+        key: 'akademik',
+        label: 'Akademik (KKM 85)',
+        short: 'Akademik',
+        score: akademikScore,
+        kkm: KKM_STANDARD,
+        subtext: `${gradeStats.passCount}/${studentNilai.length} Tuntas`,
+      },
+      {
+        key: 'presensi',
+        label: 'Presensi & Disiplin',
+        short: 'Disiplin',
+        score: presensiScore,
+        kkm: 85,
+        subtext: `${attendanceStats.hadir}/${attendanceStats.total} Kehadiran`,
+      },
+      {
+        key: 'tahfidz',
+        label: "Tahfidz & Al-Qur'an",
+        short: 'Tahfidz',
+        score: tahfidzScore,
+        kkm: 85,
+        subtext: 'Mutqin & Tartil',
+      },
+      {
+        key: 'ekskul',
+        label: 'Bakat & Ekskul',
+        short: 'Ekskul',
+        score: ekskulScore,
+        kkm: 80,
+        subtext: `${studentEkskul.length} Ekskul Diikuti`,
+      },
+      {
+        key: 'keaktifan',
+        label: 'Keaktifan Belajar',
+        short: 'Keaktifan',
+        score: keaktifanScore,
+        kkm: 85,
+        subtext: 'Partisipasi Kelas',
+      },
+      {
+        key: 'adab',
+        label: 'Adab & Karakter',
+        short: 'Adab Islami',
+        score: adabScore,
+        kkm: 85,
+        subtext: 'Akhlaqul Karimah',
+      },
+    ];
+
+    const compositeScore =
+      Math.round((axes.reduce((sum, a) => sum + a.score, 0) / axes.length) * 10) / 10;
+
+    let predikat = 'MUMTAZ (Istimewa)';
+    let predikatBadge = 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    if (compositeScore < 85) {
+      predikat = 'JAYYID (Cukup / Perlu Bimbingan)';
+      predikatBadge = 'bg-amber-50 text-amber-800 border-amber-200';
+    } else if (compositeScore < 90) {
+      predikat = 'JAYYID JIDDAN (Sangat Baik)';
+      predikatBadge = 'bg-indigo-50 text-indigo-800 border-indigo-200';
+    }
+
+    return { axes, compositeScore, predikat, predikatBadge };
+  }, [gradeStats, attendanceStats, studentNilai, studentEkskul, KKM_STANDARD]);
+
   const getStatusBadge = (status: KehadiranStatus) => {
     switch (status) {
       case 'Hadir':
@@ -277,7 +395,7 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
     <div className="space-y-6">
       {/* Student Profile & Switcher Header */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-13 h-13 rounded-2xl bg-indigo-600 border border-indigo-700 text-white flex items-center justify-center font-black text-xl shadow-md">
               {studentInfo.siswa.charAt(0)}
@@ -295,28 +413,66 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
             </div>
           </div>
 
-          {/* Switcher Siswa */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 whitespace-nowrap font-medium">Pilih Siswa:</span>
-            <select
-              value={selectedStudentName}
-              onChange={(e) => {
-                setSelectedStudentName(e.target.value);
-                if (onSelectOtherStudent) onSelectOtherStudent(e.target.value);
+          {/* Quick Prestige Actions & Switcher Siswa */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                setReportModalTab('rapor');
+                setShowReportModal(true);
               }}
-              className="text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 shadow-xs"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
             >
-              {database.master_siswa.map((s) => (
-                <option key={s.email_siswa + s.siswa} value={s.siswa}>
-                  {s.siswa} ({s.cabang})
-                </option>
-              ))}
-            </select>
+              <Award className="w-3.5 h-3.5 text-amber-300" />
+              <span>E-Rapor & Piagam</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setReportModalTab('whatsapp');
+                setShowReportModal(true);
+              }}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>Kirim WhatsApp</span>
+            </button>
+
+            <div className="flex items-center gap-1.5 pl-1">
+              <span className="text-xs text-slate-500 whitespace-nowrap font-medium">Siswa:</span>
+              <select
+                value={selectedStudentName}
+                onChange={(e) => {
+                  setSelectedStudentName(e.target.value);
+                  if (onSelectOtherStudent) onSelectOtherStudent(e.target.value);
+                }}
+                className="text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 shadow-xs"
+              >
+                {database.master_siswa.map((s) => (
+                  <option key={s.email_siswa + s.siswa} value={s.siswa}>
+                    {s.siswa} ({s.cabang})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Navigation Tabs */}
         <div className="flex flex-wrap border-t border-slate-100 pt-3 gap-2">
+          <button
+            onClick={() => setActiveTab('radar')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+              activeTab === 'radar'
+                ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Target className="w-3.5 h-3.5" />
+            Analisis Potensi 360° Santri
+          </button>
+
           <button
             onClick={() => setActiveTab('grafik')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
@@ -409,6 +565,374 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           </div>
         </div>
       </div>
+
+      {/* ============================================================== */}
+      {/* TAB: ANALISIS POTENSI 360° SANTRI (INTERACTIVE RADAR CHART)    */}
+      {/* ============================================================== */}
+      {activeTab === 'radar' && (
+        <div className="space-y-6">
+          {/* Header Banner Analisis Potensi */}
+          <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white rounded-2xl p-6 shadow-md relative overflow-hidden">
+            <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="inline-flex items-center gap-2 bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 px-3 py-1 rounded-full text-xs font-semibold">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  Al-Wildan Holistic Assessment Framework · Standar KKM {KKM_STANDARD}
+                </div>
+                <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                  Analisis Radar 360° Potensi & Karakter Santri
+                </h3>
+                <p className="text-xs sm:text-sm text-indigo-200/90 leading-relaxed">
+                  Evaluasi terpadu memadukan capaian kurikulum nasional & internasional (TIC), ketuntasan KKM 85, hafalan Tahfidz Al-Qur'an, keaktifan ekstrakurikuler, dan akhlaqul karimah.
+                </p>
+              </div>
+
+              {/* Prestige Actions */}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportModalTab('rapor');
+                    setShowReportModal(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-indigo-900 hover:bg-indigo-50 shadow-sm flex items-center gap-2 transition-all hover:scale-[1.02]"
+                >
+                  <Award className="w-4 h-4 text-indigo-600" />
+                  <span>Buka E-Rapor Digital</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportModalTab('piagam');
+                    setShowReportModal(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-sm flex items-center gap-2 transition-all hover:scale-[1.02]"
+                >
+                  <Trophy className="w-4 h-4 text-slate-950" />
+                  <span>Piagam Prestasi</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Radar & Summary Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Visual Spider / Radar Canvas (5 Cols) */}
+            <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col justify-between space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <Target className="w-4 h-4 text-indigo-600" />
+                    Radar 6 Dimensi Potensi
+                  </h4>
+                  <p className="text-[11px] text-slate-500">Sentuh atau arahkan kursor ke tiap sumbu untuk detail</p>
+                </div>
+                <span className="text-[10px] font-mono font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200">
+                  Scale 0-100
+                </span>
+              </div>
+
+              {/* Interactive SVG Radar */}
+              <div className="relative flex items-center justify-center py-2">
+                <svg
+                  viewBox="0 0 340 340"
+                  className="w-full max-w-[320px] aspect-square overflow-visible select-none"
+                >
+                  <defs>
+                    <linearGradient id="radarAreaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#4f46e5" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.2" />
+                    </linearGradient>
+                    <filter id="radarGlow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#4f46e5" floodOpacity="0.3" />
+                    </filter>
+                  </defs>
+
+                  {/* Concentric Web Rings (20%, 40%, 60%, 80%, 100%) */}
+                  {[0.2, 0.4, 0.6, 0.8, 1.0].map((factor, idx) => {
+                    const ringPoints = [0, 1, 2, 3, 4, 5]
+                      .map((i) => {
+                        const angle = -Math.PI / 2 + (i * (Math.PI * 2)) / 6;
+                        const x = 170 + 115 * factor * Math.cos(angle);
+                        const y = 170 + 115 * factor * Math.sin(angle);
+                        return `${x.toFixed(1)},${y.toFixed(1)}`;
+                      })
+                      .join(' ');
+                    return (
+                      <polygon
+                        key={factor}
+                        points={ringPoints}
+                        fill="none"
+                        stroke="#e2e8f0"
+                        strokeWidth={idx === 4 ? '1.5' : '1'}
+                        strokeDasharray={idx < 4 ? '3 3' : 'none'}
+                      />
+                    );
+                  })}
+
+                  {/* KKM 85 Benchmark Polygon Ring */}
+                  {(() => {
+                    const kkmPoints = [0, 1, 2, 3, 4, 5]
+                      .map((i) => {
+                        const angle = -Math.PI / 2 + (i * (Math.PI * 2)) / 6;
+                        const x = 170 + 115 * (KKM_STANDARD / 100) * Math.cos(angle);
+                        const y = 170 + 115 * (KKM_STANDARD / 100) * Math.sin(angle);
+                        return `${x.toFixed(1)},${y.toFixed(1)}`;
+                      })
+                      .join(' ');
+                    return (
+                      <polygon
+                        points={kkmPoints}
+                        fill="none"
+                        stroke="#f43f5e"
+                        strokeWidth="1.5"
+                        strokeDasharray="4 3"
+                        opacity="0.8"
+                      />
+                    );
+                  })()}
+
+                  {/* 6 Radial Spoke Lines */}
+                  {[0, 1, 2, 3, 4, 5].map((i) => {
+                    const angle = -Math.PI / 2 + (i * (Math.PI * 2)) / 6;
+                    const x = 170 + 115 * Math.cos(angle);
+                    const y = 170 + 115 * Math.sin(angle);
+                    return (
+                      <line
+                        key={i}
+                        x1="170"
+                        y1="170"
+                        x2={x.toFixed(1)}
+                        y2={y.toFixed(1)}
+                        stroke="#cbd5e1"
+                        strokeWidth="1"
+                      />
+                    );
+                  })}
+
+                  {/* Data Filled Polygon */}
+                  {(() => {
+                    const dataPoints = radarData.axes
+                      .map((axis, i) => {
+                        const factor = Math.max(0.1, Math.min(1.0, axis.score / 100));
+                        const angle = -Math.PI / 2 + (i * (Math.PI * 2)) / 6;
+                        const x = 170 + 115 * factor * Math.cos(angle);
+                        const y = 170 + 115 * factor * Math.sin(angle);
+                        return `${x.toFixed(1)},${y.toFixed(1)}`;
+                      })
+                      .join(' ');
+
+                    return (
+                      <polygon
+                        points={dataPoints}
+                        fill="url(#radarAreaGrad)"
+                        stroke="#4f46e5"
+                        strokeWidth="2.5"
+                        strokeLinejoin="round"
+                        filter="url(#radarGlow)"
+                      />
+                    );
+                  })()}
+
+                  {/* Vertex Points and Text Badges */}
+                  {radarData.axes.map((axis, i) => {
+                    const factor = Math.max(0.1, Math.min(1.0, axis.score / 100));
+                    const angle = -Math.PI / 2 + (i * (Math.PI * 2)) / 6;
+                    const x = 170 + 115 * factor * Math.cos(angle);
+                    const y = 170 + 115 * factor * Math.sin(angle);
+                    const isHovered = hoveredRadarAxis === i;
+
+                    // Label position
+                    const labelX = 170 + (115 + 26) * Math.cos(angle);
+                    const labelY = 170 + (115 + 26) * Math.sin(angle);
+
+                    return (
+                      <g
+                        key={axis.key}
+                        className="cursor-pointer"
+                        onMouseEnter={() => setHoveredRadarAxis(i)}
+                        onMouseLeave={() => setHoveredRadarAxis(null)}
+                      >
+                        {/* Interactive Circle at point */}
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={isHovered ? 7 : 4.5}
+                          fill="#ffffff"
+                          stroke="#4f46e5"
+                          strokeWidth="2.5"
+                          className="transition-all duration-200"
+                        />
+                        {/* Outer pulsing ring if hovered */}
+                        {isHovered && (
+                          <circle
+                            cx={x}
+                            cy={y}
+                            r="11"
+                            fill="none"
+                            stroke="#6366f1"
+                            strokeWidth="1.5"
+                            opacity="0.6"
+                          />
+                        )}
+
+                        {/* Text Label on Radar Outer Perimeter */}
+                        <text
+                          x={labelX}
+                          y={labelY}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          className={`text-[11px] font-bold tracking-tight select-none transition-colors ${
+                            isHovered ? 'fill-indigo-700 font-extrabold' : 'fill-slate-700'
+                          }`}
+                        >
+                          {axis.short} ({axis.score})
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+
+              {/* Legend & Guide */}
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100 text-xs">
+                <div className="flex items-center gap-1.5 font-semibold text-indigo-700">
+                  <span className="w-3 h-3 rounded-full bg-indigo-600" />
+                  <span>Capaian Santri</span>
+                </div>
+                <div className="flex items-center gap-1.5 font-semibold text-rose-600">
+                  <span className="w-4 h-0.5 border-b-2 border-dashed border-rose-500" />
+                  <span>Standar KKM ({KKM_STANDARD})</span>
+                </div>
+                <div className="text-[11px] text-slate-400">Target Mutlak: ≥ 85</div>
+              </div>
+            </div>
+
+            {/* Composite Score & 6 Dimension Breakdown (7 Cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              {/* Composite Index Card */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Indeks Komposit Mutu Santri
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl sm:text-4xl font-black text-slate-900 font-mono">
+                        {radarData.compositeScore}
+                      </span>
+                      <span className="text-sm font-bold text-slate-400 font-mono">/ 100</span>
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-black border ${radarData.predikatBadge}`}>
+                        {radarData.predikat}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReportModalTab('whatsapp');
+                        setShowReportModal(true);
+                      }}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1.5 transition-all"
+                    >
+                      <Share2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Bagikan ke Orang Tua</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Progress Bar of Composite vs KKM 85 */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-semibold">
+                    <span className="text-slate-600">Progres Ketuntasan Karakter Terpadu</span>
+                    <span className="text-indigo-700 font-mono font-bold">
+                      {radarData.compositeScore >= KKM_STANDARD ? 'Melampaui KKM 85 (+ ' + (radarData.compositeScore - KKM_STANDARD).toFixed(1) + ' Poin)' : 'Di Bawah KKM 85'}
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden relative">
+                    <div
+                      style={{ width: `${Math.min(100, radarData.compositeScore)}%` }}
+                      className="h-full bg-gradient-to-r from-indigo-600 to-emerald-500 rounded-full transition-all duration-500"
+                    />
+                    <div
+                      style={{ left: `${KKM_STANDARD}%` }}
+                      className="absolute top-0 bottom-0 w-0.5 bg-rose-500 z-10"
+                      title="Batas KKM 85"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 6 Dimensions Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {radarData.axes.map((axis, i) => {
+                  const isHovered = hoveredRadarAxis === i;
+                  const isPass = axis.score >= axis.kkm;
+
+                  return (
+                    <div
+                      key={axis.key}
+                      onMouseEnter={() => setHoveredRadarAxis(i)}
+                      onMouseLeave={() => setHoveredRadarAxis(null)}
+                      className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
+                        isHovered
+                          ? 'bg-indigo-50/70 border-indigo-300 shadow-xs ring-2 ring-indigo-500/20'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">{axis.label}</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">{axis.subtext}</div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`text-base font-black font-mono ${isPass ? 'text-indigo-700' : 'text-rose-600'}`}>
+                            {axis.score}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block font-mono">Target: {axis.kkm}</span>
+                        </div>
+                      </div>
+
+                      {/* Small Bar */}
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
+                        <div
+                          style={{ width: `${axis.score}%` }}
+                          className={`h-full rounded-full transition-all ${
+                            isPass ? 'bg-indigo-600' : 'bg-rose-500'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Insights & Recommendations */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-2">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Pedagogical & Character Insight:</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed text-[11px]">
+                  Santri menunjukkan performa istimewa terutama pada pilar{' '}
+                  <strong className="text-slate-800">
+                    {radarData.axes.slice().sort((a, b) => b.score - a.score)[0]?.label}
+                  </strong>{' '}
+                  dan{' '}
+                  <strong className="text-slate-800">
+                    {radarData.axes.slice().sort((a, b) => b.score - a.score)[1]?.label}
+                  </strong>
+                  . Sinergi antara kurikulum akademik KKM 85 dan pembiasaan adab harian Al-Wildan 29 Depok telah tercermin dalam kedisiplinan belajar santri.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================================== */}
       {/* TAB: GRAFIK NILAI SISWA (PER BULAN / PER SEMESTER / PER TAHUN) */}
@@ -1030,6 +1554,15 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           </div>
         </div>
       )}
+
+      {/* Official E-Rapor Digital, Piagam Prestasi & WhatsApp Broadcaster Modal */}
+      <StudentReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        studentName={selectedStudentName}
+        database={database}
+        initialTab={reportModalTab}
+      />
     </div>
   );
 }

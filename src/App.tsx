@@ -4,6 +4,8 @@ import { SheetsService } from './services/sheetsService';
 import { ToastProvider, useToast } from './components/Toast';
 import { AuthModal } from './components/AuthModal';
 import { SheetsSetupModal } from './components/SheetsSetupModal';
+import { SecuritySettingsModal } from './components/SecuritySettingsModal';
+import { BiometricService } from './services/biometricService';
 
 // Tutor Components
 import { TutorDashboard } from './components/tutor/TutorDashboard';
@@ -36,6 +38,9 @@ import {
   CheckCircle2,
   RefreshCw,
   HelpCircle,
+  Fingerprint,
+  Lock,
+  ShieldAlert,
 } from 'lucide-react';
 
 function LMSApp() {
@@ -74,13 +79,18 @@ function LMSApp() {
   // Modals
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [showSheetsModal, setShowSheetsModal] = useState<boolean>(false);
+  const [showSecurityModal, setShowSecurityModal] = useState<boolean>(false);
   const [hasSheetsUrl, setHasSheetsUrl] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [hasBiometric, setHasBiometric] = useState<boolean>(false);
 
-  // Check sheets URL
+  // Check sheets URL & Biometric status
   useEffect(() => {
     setHasSheetsUrl(Boolean(SheetsService.getScriptUrl()));
-  }, []);
+    if (currentUser) {
+      setHasBiometric(BiometricService.isUserEnrolled(currentUser.name, currentUser.role));
+    }
+  }, [currentUser]);
 
   // Save current user to localStorage
   const handleLogin = (user: ActiveUser) => {
@@ -150,6 +160,22 @@ function LMSApp() {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2">
+            {/* Security & Biometric Button */}
+            <button
+              onClick={() => setShowSecurityModal(true)}
+              className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+                hasBiometric
+                  ? 'bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100'
+                  : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
+              }`}
+              title="Pusat Keamanan & Autentikasi Biometrik WebAuthn"
+            >
+              <Fingerprint className={`w-3.5 h-3.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
+              <span className="hidden lg:inline">
+                {hasBiometric ? 'Biometrik Aktif' : 'Keamanan'}
+              </span>
+            </button>
+
             {/* Google Sheets Status Pill */}
             <button
               onClick={() => setShowSheetsModal(true)}
@@ -162,7 +188,7 @@ function LMSApp() {
             >
               <FileSpreadsheet className={`w-3.5 h-3.5 ${hasSheetsUrl ? 'text-emerald-600' : 'text-slate-500'}`} />
               <span className="hidden md:inline">
-                {hasSheetsUrl ? 'Sheets Terhubung' : 'Setup Google Sheets'}
+                {hasSheetsUrl ? 'Sheets Terhubung' : 'Setup Sheets'}
               </span>
             </button>
 
@@ -181,7 +207,8 @@ function LMSApp() {
               <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 shadow-sm transition-all"
+                  className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all"
+                  title="Ganti pengguna atau peran"
                 >
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   <span className="max-w-[120px] truncate">{currentUser.name}</span>
@@ -417,8 +444,16 @@ function LMSApp() {
               <span>Rekap</span>
             </button>
             <button
+              onClick={() => setShowSecurityModal(true)}
+              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all"
+              title="Keamanan & Biometrik"
+            >
+              <Fingerprint className={`w-5 h-5 mb-0.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
+              <span>Biometrik</span>
+            </button>
+            <button
               onClick={() => setShowSheetsModal(true)}
-              className="flex flex-col items-center py-1 px-2 text-[10px] font-semibold text-slate-500 hover:text-emerald-600 transition-all"
+              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-emerald-600 transition-all"
             >
               <FileSpreadsheet className="w-5 h-5 mb-0.5 text-emerald-600" />
               <span>Sheets</span>
@@ -491,8 +526,16 @@ function LMSApp() {
               <span>Honor</span>
             </button>
             <button
+              onClick={() => setShowSecurityModal(true)}
+              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all"
+              title="Keamanan & Biometrik"
+            >
+              <Fingerprint className={`w-5 h-5 mb-0.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
+              <span>Biometrik</span>
+            </button>
+            <button
               onClick={() => setShowSheetsModal(true)}
-              className="flex flex-col items-center py-1 px-2 text-[10px] font-semibold text-slate-500"
+              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500"
             >
               <FileSpreadsheet className="w-5 h-5 mb-0.5" />
               <span>Sheets</span>
@@ -518,6 +561,18 @@ function LMSApp() {
           reloadDatabase();
           setHasSheetsUrl(Boolean(SheetsService.getScriptUrl()));
         }}
+      />
+
+      {/* Security & Biometric Settings Modal */}
+      <SecuritySettingsModal
+        isOpen={showSecurityModal}
+        onClose={() => {
+          setShowSecurityModal(false);
+          if (currentUser) {
+            setHasBiometric(BiometricService.isUserEnrolled(currentUser.name, currentUser.role));
+          }
+        }}
+        currentUser={currentUser}
       />
     </div>
   );
