@@ -26,16 +26,23 @@ interface AuthModalProps {
   database: DatabaseState;
   onLogin: (user: ActiveUser) => void;
   currentUser: ActiveUser | null;
+  initialRole?: 'tutor' | 'siswa' | 'admin';
 }
 
-export function AuthModal({ isOpen, database, onLogin, currentUser }: AuthModalProps) {
+export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, initialRole = 'tutor' }: AuthModalProps) {
   const { showToast } = useToast();
-  const [selectedRole, setSelectedRole] = useState<'tutor' | 'siswa' | 'admin'>('tutor');
+  const [selectedRole, setSelectedRole] = useState<'tutor' | 'siswa' | 'admin'>(initialRole);
   const [tutorName, setTutorName] = useState<string>(database.master_guru[0]?.guru || '');
   const [password, setPassword] = useState<string>('aw2901234');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [selectedStudent, setSelectedStudent] = useState<string>(database.master_siswa[0]?.siswa || '');
   const [errorMsg, setErrorMsg] = useState<string>('');
+
+  useEffect(() => {
+    if (initialRole) {
+      setSelectedRole(initialRole);
+    }
+  }, [initialRole, isOpen]);
 
   // Lockout State
   const [isLocked, setIsLocked] = useState<boolean>(false);
@@ -204,6 +211,15 @@ export function AuthModal({ isOpen, database, onLogin, currentUser }: AuthModalP
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-md w-full overflow-hidden flex flex-col">
         {/* Header Branding */}
         <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 p-6 text-white text-center relative flex flex-col items-center">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="absolute right-4 top-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all text-xs font-bold"
+              title="Tutup Modal"
+            >
+              ✕
+            </button>
+          )}
           <img
             src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
             alt="Logo AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK"
@@ -223,8 +239,8 @@ export function AuthModal({ isOpen, database, onLogin, currentUser }: AuthModalP
           </div>
         </div>
 
-        {/* Role Selector Tabs */}
-        <div className="flex border-b border-slate-200/80 bg-slate-50/80 p-1.5 gap-1">
+        {/* Role Selector Tabs (Blue, Green, Orange) */}
+        <div className="flex border-b border-slate-200/80 bg-slate-50/80 p-1.5 gap-1.5">
           <button
             type="button"
             onClick={() => {
@@ -233,12 +249,12 @@ export function AuthModal({ isOpen, database, onLogin, currentUser }: AuthModalP
             }}
             className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
               selectedRole === 'tutor'
-                ? 'bg-white text-blue-700 shadow-xs ring-1 ring-slate-200/60'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-700'
+                : 'text-slate-600 hover:text-slate-900 bg-white/60'
             }`}
           >
             <UserCheck className="w-4 h-4" />
-            Tutor / Guru
+            Portal Guru
           </button>
           <button
             type="button"
@@ -248,12 +264,12 @@ export function AuthModal({ isOpen, database, onLogin, currentUser }: AuthModalP
             }}
             className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
               selectedRole === 'siswa'
-                ? 'bg-white text-blue-700 shadow-xs ring-1 ring-slate-200/60'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-700'
+                : 'text-slate-600 hover:text-slate-900 bg-white/60'
             }`}
           >
             <GraduationCap className="w-4 h-4" />
-            Siswa & Walmur
+            Portal Santri
           </button>
           <button
             type="button"
@@ -263,12 +279,12 @@ export function AuthModal({ isOpen, database, onLogin, currentUser }: AuthModalP
             }}
             className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
               selectedRole === 'admin'
-                ? 'bg-white text-blue-700 shadow-xs ring-1 ring-slate-200/60'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-orange-500 text-white shadow-sm ring-1 ring-orange-600'
+                : 'text-slate-600 hover:text-slate-900 bg-white/60'
             }`}
           >
             <ShieldCheck className="w-4 h-4" />
-            Administrator
+            Portal Admin
           </button>
         </div>
 

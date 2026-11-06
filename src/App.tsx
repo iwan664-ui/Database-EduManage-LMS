@@ -41,6 +41,14 @@ import {
   Fingerprint,
   Lock,
   ShieldAlert,
+  UserCheck,
+  ArrowRight,
+  BookOpen,
+  Award,
+  Building2,
+  CreditCard,
+  TrendingUp,
+  Calendar,
 } from 'lucide-react';
 
 function LMSApp() {
@@ -49,7 +57,7 @@ function LMSApp() {
   // Database State
   const [database, setDatabase] = useState<DatabaseState>(() => SheetsService.getLocalDatabase());
 
-  // Active User State
+  // Active User State - default null to focus on explicit role gateway
   const [currentUser, setCurrentUser] = useState<ActiveUser | null>(() => {
     const saved = localStorage.getItem('edumanage_user');
     if (saved) {
@@ -59,12 +67,7 @@ function LMSApp() {
         return null;
       }
     }
-    // Default: Budi Santoso (Tutor)
-    return {
-      role: 'tutor',
-      name: 'Budi Santoso, S.Pd.',
-      id_tutor: 'TUTOR-001',
-    };
+    return null;
   });
 
   // Active Navigation Tab
@@ -76,13 +79,19 @@ function LMSApp() {
   // Selected Class ID for Input form
   const [selectedClassId, setSelectedClassId] = useState<string>('KLS-10A-MAT');
 
-  // Modals
+  // Modals & Role selection
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [authModalRole, setAuthModalRole] = useState<'tutor' | 'siswa' | 'admin'>('tutor');
   const [showSheetsModal, setShowSheetsModal] = useState<boolean>(false);
   const [showSecurityModal, setShowSecurityModal] = useState<boolean>(false);
   const [hasSheetsUrl, setHasSheetsUrl] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [hasBiometric, setHasBiometric] = useState<boolean>(false);
+
+  const openPortalLogin = (role: 'tutor' | 'siswa' | 'admin') => {
+    setAuthModalRole(role);
+    setShowAuthModal(true);
+  };
 
   // Check sheets URL & Biometric status
   useEffect(() => {
@@ -111,7 +120,10 @@ function LMSApp() {
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('edumanage_user');
+    setCurrentUser(null);
     setShowAuthModal(true);
+    showToast('Sesi Berakhir', 'Anda telah keluar. Silakan pilih portal untuk masuk.', 'info');
   };
 
   const reloadDatabase = () => {
@@ -166,48 +178,29 @@ function LMSApp() {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2">
-            {/* Quick Role Switcher (Desktop) */}
-            <div className="hidden lg:flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 text-xs">
-              <button
-                type="button"
-                onClick={() => {
-                  handleLogin({ role: 'tutor', name: 'Budi Santoso, S.Pd.', id_tutor: 'TUTOR-001' });
-                }}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  currentUser?.role === 'tutor'
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Guru
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleLogin({ role: 'siswa', name: 'Ahmad Rizky Pratama', email: 'ahmad.rizky@gmail.com' });
-                }}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  currentUser?.role === 'siswa'
-                    ? 'bg-orange-500 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Siswa
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleLogin({ role: 'admin', name: 'Administrator LMS', email: 'admin@alwildan29.sch.id' });
-                }}
-                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
-                  currentUser?.role === 'admin'
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Admin
-              </button>
-            </div>
+            {/* Active Focused Role Badge */}
+            {currentUser && (
+              <div className="flex items-center gap-2">
+                {currentUser.role === 'tutor' && (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 text-xs font-black border border-blue-200 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                    <span>PORTAL GURU</span>
+                  </span>
+                )}
+                {currentUser.role === 'siswa' && (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-100 text-orange-900 text-xs font-black border border-orange-200 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                    <span>PORTAL SANTRI</span>
+                  </span>
+                )}
+                {currentUser.role === 'admin' && (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-black border border-emerald-200 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                    <span>PORTAL ADMIN</span>
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Security & Biometric Button */}
             <button
@@ -251,21 +244,34 @@ function LMSApp() {
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
             </button>
 
-            {/* User Profile & Role Switcher */}
-            {currentUser && (
-              <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="py-1.5 px-3 rounded-xl bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all border border-blue-900"
-                  title="Ganti pengguna atau peran"
-                >
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="max-w-[120px] truncate">{currentUser.name}</span>
-                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 rounded bg-white/20">
-                    {currentUser.role}
+            {/* User Profile & Role Info with Dedicated Logout Button */}
+            {currentUser ? (
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+                <div className="hidden md:flex flex-col text-right">
+                  <span className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
+                    {currentUser.name}
                   </span>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {currentUser.role === 'tutor' ? 'Tutor Pengampu' : currentUser.role === 'siswa' ? 'Santri' : 'Admin Lembaga'}
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleLogout}
+                  className="py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs"
+                  title="Keluar dari akun ini dan kembali ke pemilihan portal"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                  <span>Keluar</span>
                 </button>
               </div>
+            ) : (
+              <button
+                onClick={() => setShowAuthModal(true)}
+                className="py-1.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+              >
+                <span>Masuk Portal</span>
+              </button>
             )}
           </div>
         </div>
@@ -386,6 +392,253 @@ function LMSApp() {
 
       {/* Main Content Body */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+        {/* Gateway Screen when not logged in - STRICT ROLE FOCUS */}
+        {!currentUser && (
+          <div className="space-y-8 animate-fade-in py-2 sm:py-6">
+            {/* Hero Header */}
+            <div className="text-center max-w-3xl mx-auto space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200 shadow-xs text-xs font-bold text-slate-700">
+                <img
+                  src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
+                  alt="Logo"
+                  className="w-5 h-5 rounded-full object-contain"
+                />
+                <span>AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+                Sistem Manajemen Pembelajaran & Portal Terpadu (LMS)
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-medium">
+                Silakan pilih <strong className="text-slate-900">Portal Akses</strong> Anda. Setiap portal dirancang secara fokus, terisolasi, dan aman untuk menjamin kenyamanan belajar mengajar.
+              </p>
+
+              {/* Tri-Color Feature Badges */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-blue-600" />
+                  Standar KKM 85 Otomatis
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                  Halaqah Tahfidz & Smart ID
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-orange-500" />
+                  Enkripsi SHA-256 & WebAuthn
+                </span>
+              </div>
+            </div>
+
+            {/* 3 Focused Gateway Cards: Blue (Guru), Green (Siswa), Orange (Admin) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+              {/* Card 1: PORTAL GURU (Royal Blue) */}
+              <div className="bg-white rounded-3xl border-2 border-blue-200 hover:border-blue-600 shadow-md hover:shadow-2xl hover:shadow-blue-500/15 transition-all p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform" />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-14 h-14 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-600/30 group-hover:scale-105 transition-transform">
+                      <UserCheck className="w-7 h-7" />
+                    </div>
+                    <span className="text-[11px] font-black tracking-wider uppercase px-3 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                      PORTAL GURU
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 group-hover:text-blue-700 transition-colors">
+                      Guru & Tutor KBM
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      Ruang kerja pengajar untuk input nilai, presensi, jurnal mengajar, dan rekap pembelajaran.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5 pt-2 border-t border-slate-100 text-xs text-slate-700 font-medium">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <span>Format 4 Kolom: <strong>NO, NAMA, KEHADIRAN, NILAI</strong></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <span>Penilaian otomatis berpatokan <strong>Standar KKM 85</strong></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <span>Jurnal KBM harian & sinkronisasi Google Sheets</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <span>Dukungan login biometrik Sidik Jari / Face ID</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <button
+                    onClick={() => openPortalLogin('tutor')}
+                    className="w-full py-3.5 px-5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 group-hover:gap-3 transition-all cursor-pointer"
+                  >
+                    <span>Masuk Portal Guru</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: PORTAL SANTRI (Islamic Emerald Green) */}
+              <div className="bg-white rounded-3xl border-2 border-emerald-200 hover:border-emerald-600 shadow-md hover:shadow-2xl hover:shadow-emerald-500/15 transition-all p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform" />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-14 h-14 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 group-hover:scale-105 transition-transform">
+                      <GraduationCap className="w-7 h-7" />
+                    </div>
+                    <span className="text-[11px] font-black tracking-wider uppercase px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      PORTAL SANTRI
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 group-hover:text-emerald-700 transition-colors">
+                      Santri & Wali Murid
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      Laporan komprehensif perkembangan ibadah harian, hafalan tahfidz, nilai, dan kartu santri.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5 pt-2 border-t border-slate-100 text-xs text-slate-700 font-medium">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span><strong>Mutaba'ah Yaumiyah & Halaqah Tahfidz 30 Juz</strong></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span><strong>Kartu Santri Smart ID Digital</strong> (Flip 3D & QR)</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>Grafik nilai interaktif per bulan/semester</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>Jadwal mingguan & kegiatan ekstrakurikuler</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <button
+                    onClick={() => openPortalLogin('siswa')}
+                    className="w-full py-3.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 group-hover:gap-3 transition-all cursor-pointer"
+                  >
+                    <span>Buka Portal Santri</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: PORTAL ADMINISTRATOR (Vibrant Orange) */}
+              <div className="bg-white rounded-3xl border-2 border-orange-200 hover:border-orange-500 shadow-md hover:shadow-2xl hover:shadow-orange-500/15 transition-all p-6 sm:p-7 flex flex-col justify-between group relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-50 rounded-bl-full -z-10 group-hover:scale-110 transition-transform" />
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="w-14 h-14 rounded-2xl bg-orange-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/30 group-hover:scale-105 transition-transform">
+                      <ShieldCheck className="w-7 h-7" />
+                    </div>
+                    <span className="text-[11px] font-black tracking-wider uppercase px-3 py-1 rounded-full bg-orange-100 text-orange-900 border border-orange-200">
+                      PORTAL ADMIN
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 group-hover:text-orange-600 transition-colors">
+                      Administrator & Pimpinan
+                    </h3>
+                    <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      Pusat kendali lembaga, monitoring KBM terpadu, audit log, cetak dokumen, dan kalkulasi honor.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2.5 pt-2 border-t border-slate-100 text-xs text-slate-700 font-medium">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                      <span><strong>Monitoring Central</strong> & filter pencarian global</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                      <span><strong>Cetak Rapor Bulanan Resmi (PDF A4)</strong></span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                      <span><strong>Auto AI Insight</strong> evaluasi pembelajaran Gemini</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                      <span>Rekapitulasi honor tutor & audit keamanan SHA-256</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6">
+                  <button
+                    onClick={() => openPortalLogin('admin')}
+                    className="w-full py-3.5 px-5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 group-hover:gap-3 transition-all cursor-pointer"
+                  >
+                    <span>Masuk Portal Admin</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Demo Instant Access Bar */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
+              <div className="flex items-center gap-2 font-bold text-slate-800">
+                <Sparkles className="w-4 h-4 text-orange-500" />
+                <span>Masuk Cepat Sekali Klik (Mode Pengujian & Demonstrasi):</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => {
+                    handleLogin({
+                      role: 'tutor',
+                      name: database.master_guru[0]?.guru || 'Budi Santoso, S.Pd.',
+                      id_tutor: database.master_guru[0]?.id_tutor || 'TUTOR-001',
+                    });
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition-all cursor-pointer"
+                >
+                  Masuk sebagai Guru
+                </button>
+                <button
+                  onClick={() => {
+                    handleLogin({
+                      role: 'siswa',
+                      name: database.master_siswa[0]?.siswa || 'Ahmad Dahlan',
+                      email: database.master_siswa[0]?.email_siswa || 'ahmad@alwildan29.sch.id',
+                    });
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 transition-all cursor-pointer"
+                >
+                  Masuk sebagai Santri
+                </button>
+                <button
+                  onClick={() => {
+                    handleLogin({
+                      role: 'admin',
+                      name: 'Super Admin Akademik',
+                    });
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold border border-orange-200 transition-all cursor-pointer"
+                >
+                  Masuk sebagai Admin
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FOCUSED ROLE 1: TUTOR / GURU */}
         {currentUser?.role === 'tutor' && (
           <>
             {activeTab === 'dashboard' && (
@@ -427,10 +680,12 @@ function LMSApp() {
           </>
         )}
 
+        {/* FOCUSED ROLE 2: SANTRI & WALI MURID */}
         {currentUser?.role === 'siswa' && (
           <StudentPortal currentUser={currentUser} database={database} />
         )}
 
+        {/* FOCUSED ROLE 3: ADMINISTRATOR */}
         {currentUser?.role === 'admin' && (
           <>
             {activeTab === 'monitoring' && (
@@ -600,6 +855,7 @@ function LMSApp() {
         database={database}
         onLogin={handleLogin}
         currentUser={currentUser}
+        initialRole={authModalRole}
       />
 
       {/* Sheets Setup Modal */}
