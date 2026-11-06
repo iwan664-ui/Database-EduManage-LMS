@@ -1,0 +1,6 @@
+{
+  "name": "EduManage LMS - Mobile-First Google Sheets LMS",
+  "description": "Learning Management System (LMS) Mobile-First responsif dengan integrasi Google Sheets, absensi, input nilai, rekapan, laporan cetak, AI insight, dan honor tutor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
