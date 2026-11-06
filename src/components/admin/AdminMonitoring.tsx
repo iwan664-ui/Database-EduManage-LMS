@@ -325,9 +325,9 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm col-span-2 lg:col-span-1">
           <div className="text-xs text-slate-500 font-medium">Rata-rata Nilai Global</div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{avgGrade}</div>
-          <div className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5" />
-            KKM: 75
+          <div className="text-[11px] text-indigo-700 mt-1 flex items-center gap-1 font-bold">
+            <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
+            KKM Standar: 85
           </div>
         </div>
       </div>
@@ -669,7 +669,7 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
                   </div>
                   <span
                     className={`font-mono font-bold text-xs px-2.5 py-1 rounded-xl ${
-                      n.nilai >= 75
+                      n.nilai >= 85
                         ? 'bg-emerald-100 text-emerald-800'
                         : 'bg-rose-100 text-rose-800'
                     }`}

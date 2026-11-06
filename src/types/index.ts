@@ -58,6 +58,20 @@ export interface LogNilai {
   timestamp: string;
 }
 
+export interface SiswaEkstrakurikuler {
+  id_ekskul: string;
+  siswa: string;
+  nama_ekskul: string;
+  kategori: 'Keagamaan & Tahfidz' | 'Sains & Robotika' | 'Olahraga Sunnah' | 'Bahasa & Seni' | 'Kepemimpinan';
+  pembina: string;
+  jadwal: string;
+  lokasi: string;
+  kehadiran_persen: number;
+  predikat: 'A (Istimewa)' | 'B (Sangat Baik)' | 'C (Baik)';
+  capaian: string;
+  status: 'Aktif' | 'Selesai';
+}
+
 export interface DatabaseState {
   master_siswa: MasterSiswa[];
   master_guru: MasterGuru[];
@@ -65,6 +79,7 @@ export interface DatabaseState {
   siswa_kelas: SiswaKelas[];
   log_absensi: LogAbsensi[];
   log_nilai: LogNilai[];
+  ekstrakurikuler?: SiswaEkstrakurikuler[];
 }
 
 export interface ActiveUser {

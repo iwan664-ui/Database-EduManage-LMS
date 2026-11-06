@@ -119,7 +119,7 @@ export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
     gradedStudents.length > 0
       ? Math.round((gradedStudents.reduce((acc, s) => acc + s.avgGrade, 0) / gradedStudents.length) * 10) / 10
       : 0;
-  const tuntasCount = gradedStudents.filter((s) => s.avgGrade >= 75).length;
+  const tuntasCount = gradedStudents.filter((s) => s.avgGrade >= 85).length;
 
   return (
     <div className="space-y-6">
@@ -195,14 +195,14 @@ export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
           <div className="text-xs text-slate-500 font-medium">Rata-rata Nilai</div>
           <div className="text-2xl font-bold text-slate-900 mt-1">{overallAvgGrade}</div>
-          <div className="text-[11px] text-amber-600 mt-1 flex items-center gap-1">
-            <Award className="w-3.5 h-3.5" />
-            KKM Standar: 75
+          <div className="text-[11px] text-indigo-700 mt-1 flex items-center gap-1 font-bold">
+            <Award className="w-3.5 h-3.5 text-indigo-600" />
+            KKM Standar: 85
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="text-xs text-slate-500 font-medium">Tuntas KKM</div>
+          <div className="text-xs text-slate-500 font-medium">Tuntas KKM (≥ 85)</div>
           <div className="text-2xl font-bold text-slate-900 mt-1">
             {tuntasCount} / {gradedStudents.length}
           </div>
@@ -232,7 +232,7 @@ export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
                   <th className="px-4 py-3 font-semibold text-center">Alfa</th>
                   <th className="px-4 py-3 font-semibold text-center">% Presensi</th>
                   <th className="px-4 py-3 font-semibold text-center">Rata-rata Nilai</th>
-                  <th className="px-4 py-3 font-semibold text-center">Status</th>
+                  <th className="px-4 py-3 font-semibold text-center">Status KKM (85)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -253,7 +253,7 @@ export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`font-mono font-bold text-sm px-2 py-0.5 rounded-lg ${
-                          s.avgGrade >= 75
+                          s.avgGrade >= 85
                             ? 'bg-emerald-50 text-emerald-700'
                             : s.avgGrade > 0
                             ? 'bg-rose-50 text-rose-700'
@@ -264,7 +264,7 @@ export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {s.avgGrade >= 75 ? (
+                      {s.avgGrade >= 85 ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                           <CheckCircle className="w-3 h-3" /> Tuntas
                         </span>

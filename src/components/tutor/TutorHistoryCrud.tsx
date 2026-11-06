@@ -382,7 +382,7 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
                       <td className="px-4 py-3">
                         <span
                           className={`font-mono font-bold text-sm px-2 py-0.5 rounded-lg ${
-                            item.nilai >= 75 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
+                            item.nilai >= 85 ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
                           }`}
                         >
                           {item.nilai}

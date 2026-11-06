@@ -70,7 +70,7 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
         presenceRate,
         grades: studentGrades,
         avg,
-        status: avg >= 75 ? 'Tuntas' : avg > 0 ? 'Remedial' : 'Belum Ada Nilai',
+        status: avg >= 85 ? 'Tuntas' : avg > 0 ? 'Remedial' : 'Belum Ada Nilai',
         note: lastNote,
       };
     });
@@ -327,7 +327,7 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
 
         {/* Legend & Kriteria Ketuntasan Minimal */}
         <div className="text-[11px] text-slate-600 mb-8 border border-slate-200 p-3 rounded-lg print:border-slate-400">
-          <strong>Keterangan:</strong> KKM (Kriteria Ketuntasan Minimal) adalah <strong>75</strong>.
+          <strong>Keterangan:</strong> KKM (Kriteria Ketuntasan Minimal) adalah <strong>85</strong>.
           Siswa berstatus <em>Remedial</em> disarankan mengikuti pendampingan klinik belajar tambahan.
           Presensi: <strong>H</strong> = Hadir, <strong>I</strong> = Izin, <strong>S</strong> = Sakit, <strong>A</strong> = Alfa.
         </div>

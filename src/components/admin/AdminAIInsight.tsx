@@ -71,7 +71,7 @@ export function AdminAIInsight({ database }: AdminAIInsightProps) {
         : 0;
     const highest = nums.length > 0 ? Math.max(...nums) : 0;
     const lowest = nums.length > 0 ? Math.min(...nums) : 0;
-    const passCount = nums.filter((n) => n >= 75).length;
+    const passCount = nums.filter((n) => n >= 85).length;
     const passRate = nums.length > 0 ? Math.round((passCount / nums.length) * 100) : 0;
 
     // Student overview
@@ -85,7 +85,7 @@ export function AdminAIInsight({ database }: AdminAIInsightProps) {
         nama: s.siswa,
         rataRata: sAvg,
         daftarNilai: sGrades,
-        status: sAvg >= 75 ? 'Tuntas' : 'Remedial',
+        status: sAvg >= 85 ? 'Tuntas' : 'Remedial',
       };
     });
 
@@ -267,7 +267,7 @@ ${insight.actionableRecommendations.map((r) => `• ${r}`).join('\n')}`;
             <div className="text-xl font-bold font-mono text-slate-900 mt-0.5">
               {(gradeSummary as any).passRate || 0}%
             </div>
-            <div className="text-[11px] text-emerald-700 mt-0.5">Standar KKM 75</div>
+            <div className="text-[11px] text-emerald-700 mt-0.5">Standar KKM 85</div>
           </div>
 
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">

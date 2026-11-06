@@ -43,7 +43,25 @@ export class SheetsService {
       return initialData;
     }
     try {
-      return JSON.parse(cached);
+      const parsed: DatabaseState = JSON.parse(cached);
+      let changed = false;
+      if (!parsed.ekstrakurikuler || parsed.ekstrakurikuler.length === 0) {
+        parsed.ekstrakurikuler = initialData.ekstrakurikuler;
+        changed = true;
+      }
+      // Pastikan data nilai historis juga ada jika data lama hanya sedikit
+      if (parsed.log_nilai.length < initialData.log_nilai.length) {
+        const existingIds = new Set(parsed.log_nilai.map((n) => n.id_nilai));
+        const missing = initialData.log_nilai.filter((n) => !existingIds.has(n.id_nilai));
+        if (missing.length > 0) {
+          parsed.log_nilai = [...parsed.log_nilai, ...missing];
+          changed = true;
+        }
+      }
+      if (changed) {
+        this.saveLocalDatabase(parsed);
+      }
+      return parsed;
     } catch {
       return initialData;
     }
