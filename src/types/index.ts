@@ -72,6 +72,57 @@ export interface SiswaEkstrakurikuler {
   status: 'Aktif' | 'Selesai';
 }
 
+export interface MutabaahYaumiyahItem {
+  id: string;
+  siswa: string;
+  tanggal: string; // YYYY-MM-DD
+  shalat_wajib: {
+    subuh: boolean;
+    dzuhur: boolean;
+    ashar: boolean;
+    maghrib: boolean;
+    isya: boolean;
+  };
+  shalat_sunnah: {
+    dhuha: boolean;
+    tahajjud: boolean;
+    rawatib: boolean;
+  };
+  tilawah_quran: {
+    juz: number;
+    halaman_atau_surat: string;
+    status: 'Selesai' | 'Sebagian' | 'Belum';
+  };
+  dzikir: {
+    pagi: boolean;
+    petang: boolean;
+  };
+  puasa_sunnah: boolean;
+  adab_harian: {
+    birrul_walidain: boolean;
+    menjaga_lisan: boolean;
+  };
+  catatan: string;
+  skor_ibadah: number; // 0 - 100
+  verified_by_guru: boolean;
+}
+
+export interface TahfidzSetoranItem {
+  id: string;
+  siswa: string;
+  tanggal: string; // YYYY-MM-DD
+  surat: string;
+  ayat_mulai: number;
+  ayat_selesai: number;
+  juz: number;
+  kategori: 'Ziyadah (Hafalan Baru)' | 'Muraja\'ah (Pengulangan)' | 'Ujian Mutqin';
+  kelancaran: 'Mutqin (Sangat Lancar)' | 'Lancar (1-2 kali perbaikan)' | 'Perlu Diulang';
+  tajwid_makhraj: 'A (Istimewa)' | 'B+ (Sangat Baik)' | 'B (Baik)';
+  nilai: number; // e.g. 95 (KKM 85)
+  pembimbing: string;
+  catatan: string;
+}
+
 export interface DatabaseState {
   master_siswa: MasterSiswa[];
   master_guru: MasterGuru[];
@@ -80,6 +131,8 @@ export interface DatabaseState {
   log_absensi: LogAbsensi[];
   log_nilai: LogNilai[];
   ekstrakurikuler?: SiswaEkstrakurikuler[];
+  mutabaah_yaumiyah?: MutabaahYaumiyahItem[];
+  tahfidz_setoran?: TahfidzSetoranItem[];
 }
 
 export interface ActiveUser {

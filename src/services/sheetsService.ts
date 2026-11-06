@@ -49,6 +49,14 @@ export class SheetsService {
         parsed.ekstrakurikuler = initialData.ekstrakurikuler;
         changed = true;
       }
+      if (!parsed.mutabaah_yaumiyah || parsed.mutabaah_yaumiyah.length === 0) {
+        parsed.mutabaah_yaumiyah = initialData.mutabaah_yaumiyah;
+        changed = true;
+      }
+      if (!parsed.tahfidz_setoran || parsed.tahfidz_setoran.length === 0) {
+        parsed.tahfidz_setoran = initialData.tahfidz_setoran;
+        changed = true;
+      }
       // Pastikan data nilai historis juga ada jika data lama hanya sedikit
       if (parsed.log_nilai.length < initialData.log_nilai.length) {
         const existingIds = new Set(parsed.log_nilai.map((n) => n.id_nilai));

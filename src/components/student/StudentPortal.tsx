@@ -1,6 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { ActiveUser, DatabaseState, KehadiranStatus, SiswaEkstrakurikuler } from '../../types';
 import { StudentReportModal } from './StudentReportModal';
+import { StudentMutabaahTahfidz } from './StudentMutabaahTahfidz';
+import { StudentSmartCard } from './StudentSmartCard';
+import { StudentScheduleView } from './StudentScheduleView';
 import {
   User,
   Calendar,
@@ -28,6 +31,7 @@ import {
   HeartHandshake,
   Download,
   ExternalLink,
+  IdCard,
 } from 'lucide-react';
 
 interface StudentPortalProps {
@@ -37,8 +41,8 @@ interface StudentPortalProps {
 }
 
 export function StudentPortal({ currentUser, database, onSelectOtherStudent }: StudentPortalProps) {
-  // Tabs: 'radar' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
-  const [activeTab, setActiveTab] = useState<'radar' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
+  // Tabs: 'radar' | 'mutabaah' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
+  const [activeTab, setActiveTab] = useState<'radar' | 'mutabaah' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
   const [selectedStudentName, setSelectedStudentName] = useState<string>(currentUser.name);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [reportModalTab, setReportModalTab] = useState<'rapor' | 'piagam' | 'whatsapp'>('rapor');
@@ -397,14 +401,17 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-13 h-13 rounded-2xl bg-indigo-600 border border-indigo-700 text-white flex items-center justify-center font-black text-xl shadow-md">
+            <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 border-2 border-orange-400 text-white flex items-center justify-center font-black text-xl shadow-md">
               {studentInfo.siswa.charAt(0)}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-extrabold text-slate-900">{studentInfo.siswa}</h2>
-                <span className="text-[11px] font-bold bg-indigo-50 text-indigo-700 px-2.5 py-0.5 rounded-full border border-indigo-100">
+                <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
                   Siswa & Orang Tua
+                </span>
+                <span className="hidden sm:inline-block text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
+                  KKM 85
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
@@ -421,9 +428,9 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
                 setReportModalTab('rapor');
                 setShowReportModal(true);
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
             >
-              <Award className="w-3.5 h-3.5 text-amber-300" />
+              <Award className="w-3.5 h-3.5 text-orange-300" />
               <span>E-Rapor & Piagam</span>
             </button>
 
@@ -447,7 +454,7 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
                   setSelectedStudentName(e.target.value);
                   if (onSelectOtherStudent) onSelectOtherStudent(e.target.value);
                 }}
-                className="text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 shadow-xs"
+                className="text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
               >
                 {database.master_siswa.map((s) => (
                   <option key={s.email_siswa + s.siswa} value={s.siswa}>
@@ -459,65 +466,101 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           </div>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs (Harmonized Blue, Orange, Green) */}
         <div className="flex flex-wrap border-t border-slate-100 pt-3 gap-2">
           <button
             onClick={() => setActiveTab('radar')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
               activeTab === 'radar'
-                ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/30'
+                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <Target className="w-3.5 h-3.5" />
-            Analisis Potensi 360° Santri
+            <Target className="w-3.5 h-3.5 text-orange-400" />
+            Potensi 360°
+          </button>
+
+          <button
+            onClick={() => setActiveTab('mutabaah')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+              activeTab === 'mutabaah'
+                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5 text-orange-500" />
+            Mutaba'ah & Tahfidz
+          </button>
+
+          <button
+            onClick={() => setActiveTab('kartu')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+              activeTab === 'kartu'
+                ? 'bg-blue-700 text-white shadow-sm ring-2 ring-blue-700/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <IdCard className="w-3.5 h-3.5 text-blue-500" />
+            Kartu Santri Smart ID
+          </button>
+
+          <button
+            onClick={() => setActiveTab('jadwal')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+              activeTab === 'jadwal'
+                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5 text-orange-500" />
+            Jadwal KBM
           </button>
 
           <button
             onClick={() => setActiveTab('grafik')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
               activeTab === 'grafik'
-                ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/30'
+                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <BarChart2 className="w-3.5 h-3.5" />
-            Grafik Nilai (Bulan / Semester / Tahun)
+            <BarChart2 className="w-3.5 h-3.5 text-blue-500" />
+            Grafik Nilai (KKM 85)
           </button>
 
           <button
             onClick={() => setActiveTab('ekskul')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
               activeTab === 'ekskul'
-                ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/30'
+                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <Compass className="w-3.5 h-3.5" />
-            Ekstrakurikuler Siswa ({studentEkskul.length})
+            <Compass className="w-3.5 h-3.5 text-emerald-500" />
+            Ekstrakurikuler ({studentEkskul.length})
           </button>
 
           <button
             onClick={() => setActiveTab('harian')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
               activeTab === 'harian'
-                ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/30'
+                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            Report Harian & Catatan Guru
+            Report Harian
           </button>
 
           <button
             onClick={() => setActiveTab('bulanan')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
               activeTab === 'bulanan'
-                ? 'bg-indigo-600 text-white shadow-sm ring-2 ring-indigo-600/30'
+                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
-            <TrendingUp className="w-3.5 h-3.5" />
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             Rapor Bulanan
           </button>
         </div>
@@ -932,6 +975,40 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
             </div>
           </div>
         </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: MUTABA'AH YAUMIYAH & TAHFIDZ DIGITAL                      */}
+      {/* ============================================================== */}
+      {activeTab === 'mutabaah' && (
+        <StudentMutabaahTahfidz
+          studentName={selectedStudentName}
+          database={database}
+          onDataUpdated={() => {
+            if (onSelectOtherStudent) onSelectOtherStudent(selectedStudentName);
+          }}
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: KARTU TANDA SANTRI SMART ID                               */}
+      {/* ============================================================== */}
+      {activeTab === 'kartu' && (
+        <StudentSmartCard
+          student={studentInfo}
+          enrolledClassesCount={enrolledClasses.length}
+          kkmAvg={gradeStats.avg > 0 ? gradeStats.avg : 88.5}
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: JADWAL PELAJARAN & AGENDA KBM INTERAKTIF                  */}
+      {/* ============================================================== */}
+      {activeTab === 'jadwal' && (
+        <StudentScheduleView
+          studentName={selectedStudentName}
+          database={database}
+        />
       )}
 
       {/* ============================================================== */}

@@ -108,8 +108,8 @@ export function TutorDashboard({
         <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
           <div className="text-xs text-slate-500 font-medium">Log Presensi Terinput</div>
           <div className="text-2xl font-extrabold text-slate-900 mt-1">{totalInputAbsensi}</div>
-          <div className="text-[11px] text-indigo-700 mt-1 flex items-center gap-1 font-semibold">
-            <Calendar className="w-3.5 h-3.5" />
+          <div className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-semibold">
+            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
             Catatan kehadiran tersimpan
           </div>
         </div>
@@ -117,8 +117,8 @@ export function TutorDashboard({
         <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
           <div className="text-xs text-slate-500 font-medium">Log Nilai Siswa</div>
           <div className="text-2xl font-extrabold text-slate-900 mt-1">{totalInputNilai}</div>
-          <div className="text-[11px] text-amber-700 mt-1 flex items-center gap-1 font-semibold">
-            <Award className="w-3.5 h-3.5 text-amber-600" />
+          <div className="text-[11px] text-orange-700 mt-1 flex items-center gap-1 font-semibold">
+            <Award className="w-3.5 h-3.5 text-orange-500" />
             Standar KKM 85
           </div>
         </div>

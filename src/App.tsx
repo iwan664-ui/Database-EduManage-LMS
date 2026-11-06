@@ -133,6 +133,9 @@ function LMSApp() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans pb-20 md:pb-8 text-slate-800">
+      {/* Top Brand Accent Line (Blue, Orange, Green) */}
+      <div className="h-1.5 bg-gradient-to-r from-blue-700 via-orange-500 to-emerald-500 w-full" />
+
       {/* Top Navbar */}
       <header className="print:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
@@ -145,11 +148,14 @@ function LMSApp() {
             />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-extrabold text-slate-900 tracking-tight leading-tight">
+                <h1 className="text-sm sm:text-base font-extrabold text-blue-950 tracking-tight leading-tight">
                   AL-WILDAN ISLAMIC SCHOOL 29
                 </h1>
                 <span className="hidden sm:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
                   Google Sheets Sync
+                </span>
+                <span className="hidden md:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 shrink-0">
+                  KKM 85
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
@@ -160,6 +166,49 @@ function LMSApp() {
 
           {/* Right Header Actions */}
           <div className="flex items-center gap-2">
+            {/* Quick Role Switcher (Desktop) */}
+            <div className="hidden lg:flex items-center p-1 bg-slate-100 rounded-xl border border-slate-200/80 text-xs">
+              <button
+                type="button"
+                onClick={() => {
+                  handleLogin({ role: 'tutor', name: 'Budi Santoso, S.Pd.', id_tutor: 'TUTOR-001' });
+                }}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  currentUser?.role === 'tutor'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Guru
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleLogin({ role: 'siswa', name: 'Ahmad Rizky Pratama', email: 'ahmad.rizky@gmail.com' });
+                }}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  currentUser?.role === 'siswa'
+                    ? 'bg-orange-500 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Siswa
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleLogin({ role: 'admin', name: 'Administrator LMS', email: 'admin@alwildan29.sch.id' });
+                }}
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                  currentUser?.role === 'admin'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Admin
+              </button>
+            </div>
+
             {/* Security & Biometric Button */}
             <button
               onClick={() => setShowSecurityModal(true)}
@@ -171,7 +220,7 @@ function LMSApp() {
               title="Pusat Keamanan & Autentikasi Biometrik WebAuthn"
             >
               <Fingerprint className={`w-3.5 h-3.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
-              <span className="hidden lg:inline">
+              <span className="hidden xl:inline">
                 {hasBiometric ? 'Biometrik Aktif' : 'Keamanan'}
               </span>
             </button>
@@ -188,7 +237,7 @@ function LMSApp() {
             >
               <FileSpreadsheet className={`w-3.5 h-3.5 ${hasSheetsUrl ? 'text-emerald-600' : 'text-slate-500'}`} />
               <span className="hidden md:inline">
-                {hasSheetsUrl ? 'Sheets Terhubung' : 'Setup Sheets'}
+                {hasSheetsUrl ? 'Sheets OK' : 'Setup Sheets'}
               </span>
             </button>
 
@@ -207,7 +256,7 @@ function LMSApp() {
               <div className="flex items-center gap-1.5 pl-2 border-l border-slate-200">
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="py-1.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all"
+                  className="py-1.5 px-3 rounded-xl bg-blue-950 hover:bg-blue-900 text-white text-xs font-semibold flex items-center gap-2 shadow-xs transition-all border border-blue-900"
                   title="Ganti pengguna atau peran"
                 >
                   <span className="w-2 h-2 rounded-full bg-emerald-400" />
@@ -228,9 +277,9 @@ function LMSApp() {
               <>
                 <button
                   onClick={() => setActiveTab('dashboard')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'dashboard'
-                      ? 'bg-white text-blue-700 shadow-sm'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -239,20 +288,20 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('input')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'input'
-                      ? 'bg-white text-blue-700 shadow-sm'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <PlusCircle className="w-3.5 h-3.5" />
+                  <PlusCircle className="w-3.5 h-3.5 text-orange-300" />
                   Input Presensi & Nilai
                 </button>
                 <button
                   onClick={() => setActiveTab('crud')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'crud'
-                      ? 'bg-white text-blue-700 shadow-sm'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -261,9 +310,9 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('rekap')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'rekap'
-                      ? 'bg-white text-blue-700 shadow-sm'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -276,9 +325,9 @@ function LMSApp() {
             {currentUser?.role === 'siswa' && (
               <button
                 onClick={() => setActiveTab('portal')}
-                className="py-2 px-3.5 rounded-lg text-xs font-bold bg-white text-indigo-700 shadow-sm flex items-center gap-1.5"
+                className="py-2 px-3.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs flex items-center gap-1.5"
               >
-                <GraduationCap className="w-3.5 h-3.5" />
+                <GraduationCap className="w-3.5 h-3.5 text-orange-300" />
                 Portal Laporan Siswa & Walmur
               </button>
             )}
@@ -287,9 +336,9 @@ function LMSApp() {
               <>
                 <button
                   onClick={() => setActiveTab('monitoring')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'monitoring'
-                      ? 'bg-white text-blue-700 shadow-sm'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -298,9 +347,9 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('print')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'print'
-                      ? 'bg-white text-blue-700 shadow-sm'
+                      ? 'bg-blue-700 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -309,24 +358,24 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('insight')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'insight'
-                      ? 'bg-white text-purple-700 shadow-sm'
+                      ? 'bg-orange-500 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   Auto AI Insight
                 </button>
                 <button
                   onClick={() => setActiveTab('fee')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
                     activeTab === 'fee'
-                      ? 'bg-white text-emerald-700 shadow-sm'
+                      ? 'bg-emerald-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                  <DollarSign className="w-3.5 h-3.5" />
                   Rekapitulasi Honor Tutor
                 </button>
               </>
@@ -465,24 +514,24 @@ function LMSApp() {
           <>
             <button
               onClick={() => setActiveTab('portal')}
-              className="flex flex-col items-center py-1 px-3 text-[10px] font-semibold text-indigo-600"
+              className="flex flex-col items-center py-1 px-3 text-[10px] font-semibold text-blue-600"
             >
-              <GraduationCap className="w-5 h-5 mb-0.5" />
+              <GraduationCap className="w-5 h-5 mb-0.5 text-blue-600" />
               <span>Laporan Saya</span>
             </button>
             <button
               onClick={() => setShowAuthModal(true)}
               className="flex flex-col items-center py-1 px-3 text-[10px] font-semibold text-slate-500"
             >
-              <Users className="w-5 h-5 mb-0.5" />
+              <Users className="w-5 h-5 mb-0.5 text-orange-500" />
               <span>Ganti Siswa</span>
             </button>
             <button
               onClick={() => setShowSheetsModal(true)}
               className="flex flex-col items-center py-1 px-3 text-[10px] font-semibold text-slate-500"
             >
-              <FileSpreadsheet className="w-5 h-5 mb-0.5" />
-              <span>Koneksi</span>
+              <FileSpreadsheet className="w-5 h-5 mb-0.5 text-emerald-600" />
+              <span>Sheets</span>
             </button>
           </>
         )}
@@ -510,16 +559,16 @@ function LMSApp() {
             <button
               onClick={() => setActiveTab('insight')}
               className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'insight' ? 'text-purple-600' : 'text-slate-500'
+                activeTab === 'insight' ? 'text-orange-500 font-bold' : 'text-slate-500'
               }`}
             >
-              <Sparkles className="w-5 h-5 mb-0.5 text-purple-600" />
+              <Sparkles className="w-5 h-5 mb-0.5 text-orange-500" />
               <span>AI Insight</span>
             </button>
             <button
               onClick={() => setActiveTab('fee')}
               className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'fee' ? 'text-emerald-600' : 'text-slate-500'
+                activeTab === 'fee' ? 'text-emerald-600 font-bold' : 'text-slate-500'
               }`}
             >
               <DollarSign className="w-5 h-5 mb-0.5 text-emerald-600" />
