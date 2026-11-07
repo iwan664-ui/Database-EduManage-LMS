@@ -161,3 +161,80 @@ export interface AIInsightResult {
   needsAttention: string[];
   actionableRecommendations: string[];
 }
+
+// CBT (Computer-Based Test) Types
+export interface CbtQuestion {
+  id: number;
+  pertanyaan: string;
+  pilihan: string[];
+  kunci: number; // Index 0-3
+  pembahasan: string;
+}
+
+export interface CbtExamPackage {
+  id: string;
+  judul: string;
+  mapel: string;
+  kelas: string;
+  kkm: number; // 85
+  durasiMenit: number;
+  totalSoal: number;
+  instruksi: string;
+  questions: CbtQuestion[];
+}
+
+export interface CbtExamResult {
+  id: string;
+  examId: string;
+  judul: string;
+  siswa: string;
+  skor: number; // 0 - 100
+  benar: number;
+  salah: number;
+  statusKkm: 'TUNTAS (MUMTAZ)' | 'REMEDIAL';
+  tanggal: string;
+  jawabanUser: Record<number, number>;
+}
+
+// Digital Maktabah & E-Learning Types
+export interface HaditsArbainItem {
+  nomor: number;
+  judul: string;
+  perawi: string;
+  teksArab: string;
+  terjemahan: string;
+  faedah: string[];
+}
+
+export interface MurottalItem {
+  nomorSurah: number;
+  namaSurah: string;
+  asmaArab: string;
+  arti: string;
+  jumlahAyat: number;
+  tempatTurun: 'Makkiyah' | 'Madaniyah';
+  audioUrl: string;
+}
+
+export interface EModulItem {
+  id: string;
+  judul: string;
+  mapel: string;
+  kategori: 'Islamic & Tahfidz' | 'Cambridge Science' | 'Matematika' | 'Bahasa Arab & Inggris';
+  tingkat: string;
+  halaman: number;
+  penulis: string;
+  deskripsi: string;
+}
+
+// Adab & Karakter Santri
+export interface StudentAdabRecord {
+  id: string;
+  siswa: string;
+  tanggal: string;
+  kategori: 'Akhlak & Adab' | 'Kedisiplinan' | 'Ibadah Berjamaah' | 'Tahfidz & Bahasa';
+  tipe: 'Poin Kebaikan (+)' | 'Catatan Disiplin (-)';
+  poin: number;
+  deskripsi: string;
+  pencatat: string;
+}

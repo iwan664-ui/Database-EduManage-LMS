@@ -4,6 +4,9 @@ import { StudentReportModal } from './StudentReportModal';
 import { StudentMutabaahTahfidz } from './StudentMutabaahTahfidz';
 import { StudentSmartCard } from './StudentSmartCard';
 import { StudentScheduleView } from './StudentScheduleView';
+import { CbtExamEngine } from '../cbt/CbtExamEngine';
+import { DigitalMaktabah } from '../library/DigitalMaktabah';
+import { StudentAdabCharacterView } from '../adab/StudentAdabCharacterView';
 import {
   User,
   Calendar,
@@ -32,6 +35,8 @@ import {
   Download,
   ExternalLink,
   IdCard,
+  FileQuestion,
+  Star,
 } from 'lucide-react';
 
 interface StudentPortalProps {
@@ -41,8 +46,8 @@ interface StudentPortalProps {
 }
 
 export function StudentPortal({ currentUser, database, onSelectOtherStudent }: StudentPortalProps) {
-  // Tabs: 'radar' | 'mutabaah' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
-  const [activeTab, setActiveTab] = useState<'radar' | 'mutabaah' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
+  // Tabs: 'radar' | 'mutabaah' | 'cbt' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
+  const [activeTab, setActiveTab] = useState<'radar' | 'mutabaah' | 'cbt' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
   const [selectedStudentName, setSelectedStudentName] = useState<string>(currentUser.name);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [reportModalTab, setReportModalTab] = useState<'rapor' | 'piagam' | 'whatsapp'>('rapor');
@@ -470,7 +475,7 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
         <div className="flex flex-wrap border-t border-slate-100 pt-3 gap-2">
           <button
             onClick={() => setActiveTab('radar')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
               activeTab === 'radar'
                 ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -482,7 +487,7 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
 
           <button
             onClick={() => setActiveTab('mutabaah')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
               activeTab === 'mutabaah'
                 ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -493,8 +498,44 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           </button>
 
           <button
+            onClick={() => setActiveTab('cbt')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+              activeTab === 'cbt'
+                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
+                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+            }`}
+          >
+            <FileQuestion className="w-3.5 h-3.5 text-orange-400" />
+            Ujian CBT (KKM 85)
+          </button>
+
+          <button
+            onClick={() => setActiveTab('maktabah')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+              activeTab === 'maktabah'
+                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
+                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+            Digital Maktabah
+          </button>
+
+          <button
+            onClick={() => setActiveTab('adab')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+              activeTab === 'adab'
+                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
+                : 'bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200'
+            }`}
+          >
+            <Star className="w-3.5 h-3.5 text-amber-500" />
+            Bintang Akhlak & Adab
+          </button>
+
+          <button
             onClick={() => setActiveTab('kartu')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
               activeTab === 'kartu'
                 ? 'bg-blue-700 text-white shadow-sm ring-2 ring-blue-700/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -506,7 +547,7 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
 
           <button
             onClick={() => setActiveTab('jadwal')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
               activeTab === 'jadwal'
                 ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
                 : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -987,6 +1028,37 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           onDataUpdated={() => {
             if (onSelectOtherStudent) onSelectOtherStudent(selectedStudentName);
           }}
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: UJIAN & CBT ONLINE (STANDAR KKM 85)                       */}
+      {/* ============================================================== */}
+      {activeTab === 'cbt' && (
+        <CbtExamEngine
+          currentUser={currentUser}
+          database={database}
+          onSaveResultToDatabase={(newNilai) => {
+            database.log_nilai.unshift(newNilai);
+            if (onSelectOtherStudent) onSelectOtherStudent(selectedStudentName);
+          }}
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: DIGITAL MAKTABAH & E-LEARNING (MUROTTAL & HADITS)         */}
+      {/* ============================================================== */}
+      {activeTab === 'maktabah' && (
+        <DigitalMaktabah />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: BINTANG AKHLAK & ADAB SANTRI                              */}
+      {/* ============================================================== */}
+      {activeTab === 'adab' && (
+        <StudentAdabCharacterView
+          currentUser={currentUser}
+          studentName={selectedStudentName}
         />
       )}
 

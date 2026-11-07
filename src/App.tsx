@@ -22,6 +22,11 @@ import { AdminMonthlyReportPrint } from './components/admin/AdminMonthlyReportPr
 import { AdminAIInsight } from './components/admin/AdminAIInsight';
 import { AdminTutorFeeReport } from './components/admin/AdminTutorFeeReport';
 
+// New Advanced Modules
+import { CbtExamEngine } from './components/cbt/CbtExamEngine';
+import { DigitalMaktabah } from './components/library/DigitalMaktabah';
+import { AttendanceScannerModal } from './components/scanner/AttendanceScannerModal';
+
 import {
   GraduationCap,
   FileSpreadsheet,
@@ -49,6 +54,9 @@ import {
   CreditCard,
   TrendingUp,
   Calendar,
+  QrCode,
+  Scan,
+  FileQuestion,
 } from 'lucide-react';
 
 function LMSApp() {
@@ -71,9 +79,9 @@ function LMSApp() {
   });
 
   // Active Navigation Tab
-  // For tutor: 'dashboard' | 'input' | 'crud' | 'rekap'
+  // For tutor: 'dashboard' | 'input' | 'crud' | 'rekap' | 'cbt' | 'maktabah'
   // For siswa: 'portal'
-  // For admin: 'monitoring' | 'print' | 'insight' | 'fee'
+  // For admin: 'monitoring' | 'print' | 'insight' | 'fee' | 'cbt' | 'maktabah'
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
   // Selected Class ID for Input form
@@ -84,6 +92,7 @@ function LMSApp() {
   const [authModalRole, setAuthModalRole] = useState<'tutor' | 'siswa' | 'admin'>('tutor');
   const [showSheetsModal, setShowSheetsModal] = useState<boolean>(false);
   const [showSecurityModal, setShowSecurityModal] = useState<boolean>(false);
+  const [showScannerModal, setShowScannerModal] = useState<boolean>(false);
   const [hasSheetsUrl, setHasSheetsUrl] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [hasBiometric, setHasBiometric] = useState<boolean>(false);
@@ -202,10 +211,20 @@ function LMSApp() {
               </div>
             )}
 
+            {/* Barcode & QR Scanner Modal Trigger */}
+            <button
+              onClick={() => setShowScannerModal(true)}
+              className="py-1.5 px-3 rounded-xl text-xs font-bold border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              title="Scanner Presensi QR & Barcode Kartu Santri"
+            >
+              <QrCode className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden lg:inline">Scan Presensi</span>
+            </button>
+
             {/* Security & Biometric Button */}
             <button
               onClick={() => setShowSecurityModal(true)}
-              className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${
+              className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
                 hasBiometric
                   ? 'bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100'
                   : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
@@ -283,7 +302,7 @@ function LMSApp() {
               <>
                 <button
                   onClick={() => setActiveTab('dashboard')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'dashboard'
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -294,7 +313,7 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('input')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'input'
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -305,7 +324,7 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('crud')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'crud'
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -316,7 +335,7 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('rekap')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'rekap'
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -324,6 +343,28 @@ function LMSApp() {
                 >
                   <BarChart3 className="w-3.5 h-3.5" />
                   Rekapitulasi Kelas & Mapel
+                </button>
+                <button
+                  onClick={() => setActiveTab('cbt')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'cbt'
+                      ? 'bg-orange-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FileQuestion className="w-3.5 h-3.5 text-orange-300" />
+                  Ujian & Bank Soal CBT
+                </button>
+                <button
+                  onClick={() => setActiveTab('maktabah')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'maktabah'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-300" />
+                  Digital Maktabah
                 </button>
               </>
             )}
@@ -342,7 +383,7 @@ function LMSApp() {
               <>
                 <button
                   onClick={() => setActiveTab('monitoring')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'monitoring'
                       ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -353,7 +394,7 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('print')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'print'
                       ? 'bg-blue-700 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -364,7 +405,7 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('insight')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'insight'
                       ? 'bg-orange-500 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -375,7 +416,7 @@ function LMSApp() {
                 </button>
                 <button
                   onClick={() => setActiveTab('fee')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'fee'
                       ? 'bg-emerald-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
@@ -383,6 +424,28 @@ function LMSApp() {
                 >
                   <DollarSign className="w-3.5 h-3.5" />
                   Rekapitulasi Honor Tutor
+                </button>
+                <button
+                  onClick={() => setActiveTab('cbt')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'cbt'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FileQuestion className="w-3.5 h-3.5" />
+                  Pusat Ujian CBT
+                </button>
+                <button
+                  onClick={() => setActiveTab('maktabah')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'maktabah'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Digital Maktabah
                 </button>
               </>
             )}
@@ -677,6 +740,19 @@ function LMSApp() {
             {activeTab === 'rekap' && (
               <TutorRecapView database={database} tutorName={currentUser.name} />
             )}
+
+            {activeTab === 'cbt' && (
+              <CbtExamEngine
+                isTutorView
+                currentUser={currentUser}
+                database={database}
+                onSaveResultToDatabase={() => reloadDatabase()}
+              />
+            )}
+
+            {activeTab === 'maktabah' && (
+              <DigitalMaktabah />
+            )}
           </>
         )}
 
@@ -703,6 +779,19 @@ function LMSApp() {
             {activeTab === 'insight' && <AdminAIInsight database={database} />}
 
             {activeTab === 'fee' && <AdminTutorFeeReport database={database} />}
+
+            {activeTab === 'cbt' && (
+              <CbtExamEngine
+                isTutorView
+                currentUser={currentUser}
+                database={database}
+                onSaveResultToDatabase={() => reloadDatabase()}
+              />
+            )}
+
+            {activeTab === 'maktabah' && (
+              <DigitalMaktabah />
+            )}
           </>
         )}
       </main>
@@ -878,6 +967,14 @@ function LMSApp() {
           }
         }}
         currentUser={currentUser}
+      />
+
+      {/* Attendance Barcode & QR Scanner Modal */}
+      <AttendanceScannerModal
+        isOpen={showScannerModal}
+        onClose={() => setShowScannerModal(false)}
+        database={database}
+        onAttendanceLogged={() => reloadDatabase()}
       />
     </div>
   );
