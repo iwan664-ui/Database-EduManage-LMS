@@ -26,6 +26,9 @@ import { AdminTutorFeeReport } from './components/admin/AdminTutorFeeReport';
 import { CbtExamEngine } from './components/cbt/CbtExamEngine';
 import { DigitalMaktabah } from './components/library/DigitalMaktabah';
 import { AttendanceScannerModal } from './components/scanner/AttendanceScannerModal';
+import { AssignmentHub } from './components/assignment/AssignmentHub';
+import { VirtualClassroomHub } from './components/virtual/VirtualClassroomHub';
+import { AnnouncementBulletinBoard } from './components/announcement/AnnouncementBulletinBoard';
 
 import {
   GraduationCap,
@@ -57,6 +60,9 @@ import {
   QrCode,
   Scan,
   FileQuestion,
+  FileCheck,
+  Video,
+  Megaphone,
 } from 'lucide-react';
 
 function LMSApp() {
@@ -348,12 +354,34 @@ function LMSApp() {
                   onClick={() => setActiveTab('cbt')}
                   className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'cbt'
-                      ? 'bg-orange-500 text-white shadow-xs'
+                      ? 'bg-blue-600 text-white shadow-xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <FileQuestion className="w-3.5 h-3.5 text-orange-300" />
-                  Ujian & Bank Soal CBT
+                  Ujian CBT (KKM 85)
+                </button>
+                <button
+                  onClick={() => setActiveTab('tugas')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'tugas'
+                      ? 'bg-blue-700 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FileCheck className="w-3.5 h-3.5 text-orange-300" />
+                  Kelola Tugas & PR
+                </button>
+                <button
+                  onClick={() => setActiveTab('virtual')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'virtual'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Video className="w-3.5 h-3.5 text-emerald-300" />
+                  Kelas Virtual & Forum
                 </button>
                 <button
                   onClick={() => setActiveTab('maktabah')}
@@ -365,6 +393,17 @@ function LMSApp() {
                 >
                   <BookOpen className="w-3.5 h-3.5 text-emerald-300" />
                   Digital Maktabah
+                </button>
+                <button
+                  onClick={() => setActiveTab('pengumuman')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'pengumuman'
+                      ? 'bg-orange-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Megaphone className="w-3.5 h-3.5 text-orange-300" />
+                  Pengumuman
                 </button>
               </>
             )}
@@ -426,6 +465,17 @@ function LMSApp() {
                   Rekapitulasi Honor Tutor
                 </button>
                 <button
+                  onClick={() => setActiveTab('tugas')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'tugas'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FileCheck className="w-3.5 h-3.5" />
+                  Monitoring Tugas
+                </button>
+                <button
                   onClick={() => setActiveTab('cbt')}
                   className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'cbt'
@@ -437,6 +487,17 @@ function LMSApp() {
                   Pusat Ujian CBT
                 </button>
                 <button
+                  onClick={() => setActiveTab('virtual')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'virtual'
+                      ? 'bg-emerald-600 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Video className="w-3.5 h-3.5" />
+                  Ruang Virtual
+                </button>
+                <button
                   onClick={() => setActiveTab('maktabah')}
                   className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     activeTab === 'maktabah'
@@ -446,6 +507,17 @@ function LMSApp() {
                 >
                   <BookOpen className="w-3.5 h-3.5" />
                   Digital Maktabah
+                </button>
+                <button
+                  onClick={() => setActiveTab('pengumuman')}
+                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    activeTab === 'pengumuman'
+                      ? 'bg-orange-500 text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Megaphone className="w-3.5 h-3.5" />
+                  Pengumuman
                 </button>
               </>
             )}
@@ -475,7 +547,7 @@ function LMSApp() {
                 Silakan pilih <strong className="text-slate-900">Portal Akses</strong> Anda. Setiap portal dirancang secara fokus, terisolasi, dan aman untuk menjamin kenyamanan belajar mengajar.
               </p>
 
-              {/* Tri-Color Feature Badges */}
+              {/* Modern LMS Feature Badges */}
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-blue-600" />
@@ -484,6 +556,14 @@ function LMSApp() {
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-emerald-600" />
                   Halaqah Tahfidz & Smart ID
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 border border-blue-300 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                  CBT Online & Tugas Terstruktur
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-xs font-bold">
+                  <span className="w-2 h-2 rounded-full bg-teal-600" />
+                  Kelas Virtual & Digital Maktabah
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-800 border border-orange-200 text-xs font-bold">
                   <span className="w-2 h-2 rounded-full bg-orange-500" />
@@ -750,8 +830,24 @@ function LMSApp() {
               />
             )}
 
+            {activeTab === 'tugas' && (
+              <AssignmentHub
+                currentUser={currentUser}
+                database={database}
+                onGradeSubmitted={() => reloadDatabase()}
+              />
+            )}
+
+            {activeTab === 'virtual' && (
+              <VirtualClassroomHub currentUser={currentUser} />
+            )}
+
             {activeTab === 'maktabah' && (
               <DigitalMaktabah />
+            )}
+
+            {activeTab === 'pengumuman' && (
+              <AnnouncementBulletinBoard currentUser={currentUser} />
             )}
           </>
         )}
@@ -780,6 +876,14 @@ function LMSApp() {
 
             {activeTab === 'fee' && <AdminTutorFeeReport database={database} />}
 
+            {activeTab === 'tugas' && (
+              <AssignmentHub
+                currentUser={currentUser}
+                database={database}
+                onGradeSubmitted={() => reloadDatabase()}
+              />
+            )}
+
             {activeTab === 'cbt' && (
               <CbtExamEngine
                 isTutorView
@@ -789,8 +893,16 @@ function LMSApp() {
               />
             )}
 
+            {activeTab === 'virtual' && (
+              <VirtualClassroomHub currentUser={currentUser} />
+            )}
+
             {activeTab === 'maktabah' && (
               <DigitalMaktabah />
+            )}
+
+            {activeTab === 'pengumuman' && (
+              <AnnouncementBulletinBoard currentUser={currentUser} />
             )}
           </>
         )}
@@ -828,28 +940,38 @@ function LMSApp() {
               <span>Riwayat</span>
             </button>
             <button
-              onClick={() => setActiveTab('rekap')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'rekap' ? 'text-blue-600' : 'text-slate-500'
+              onClick={() => setActiveTab('tugas')}
+              className={`flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold transition-all cursor-pointer ${
+                activeTab === 'tugas' ? 'text-blue-600 font-bold' : 'text-slate-500'
               }`}
             >
-              <BarChart3 className="w-5 h-5 mb-0.5" />
-              <span>Rekap</span>
+              <FileCheck className="w-5 h-5 mb-0.5" />
+              <span>Tugas</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('cbt')}
+              className={`flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold transition-all cursor-pointer ${
+                activeTab === 'cbt' ? 'text-blue-600 font-bold' : 'text-slate-500'
+              }`}
+            >
+              <FileQuestion className="w-5 h-5 mb-0.5" />
+              <span>CBT</span>
+            </button>
+            <button
+              onClick={() => setShowScannerModal(true)}
+              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all cursor-pointer"
+              title="Scan QR / Barcode"
+            >
+              <QrCode className="w-5 h-5 mb-0.5 text-blue-600" />
+              <span>Scan</span>
             </button>
             <button
               onClick={() => setShowSecurityModal(true)}
-              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all"
+              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all cursor-pointer"
               title="Keamanan & Biometrik"
             >
               <Fingerprint className={`w-5 h-5 mb-0.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
               <span>Biometrik</span>
-            </button>
-            <button
-              onClick={() => setShowSheetsModal(true)}
-              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-emerald-600 transition-all"
-            >
-              <FileSpreadsheet className="w-5 h-5 mb-0.5 text-emerald-600" />
-              <span>Sheets</span>
             </button>
           </>
         )}

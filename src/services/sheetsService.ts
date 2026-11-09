@@ -57,6 +57,20 @@ export class SheetsService {
         parsed.tahfidz_setoran = initialData.tahfidz_setoran;
         changed = true;
       }
+      // Sanitasi master_siswa untuk mencegah duplikasi data
+      if (Array.isArray(parsed.master_siswa)) {
+        const seenSiswa = new Set<string>();
+        const originalCount = parsed.master_siswa.length;
+        parsed.master_siswa = parsed.master_siswa.filter((s) => {
+          const key = `${(s.siswa || '').trim().toLowerCase()}_${(s.cabang || '').trim().toLowerCase()}`;
+          if (!key || seenSiswa.has(key)) return false;
+          seenSiswa.add(key);
+          return true;
+        });
+        if (parsed.master_siswa.length !== originalCount) {
+          changed = true;
+        }
+      }
       // Pastikan data nilai historis juga ada jika data lama hanya sedikit
       if (parsed.log_nilai.length < initialData.log_nilai.length) {
         const existingIds = new Set(parsed.log_nilai.map((n) => n.id_nilai));
@@ -152,8 +166,17 @@ export class SheetsService {
       }
 
       const current = this.getLocalDatabase();
+      const rawMasterSiswa = res.master_siswa?.length ? res.master_siswa : current.master_siswa;
+      const seenSiswa = new Set<string>();
+      const sanitizedMasterSiswa = (rawMasterSiswa || []).filter((s: any) => {
+        const key = `${(s.siswa || '').trim().toLowerCase()}_${(s.cabang || '').trim().toLowerCase()}`;
+        if (!key || seenSiswa.has(key)) return false;
+        seenSiswa.add(key);
+        return true;
+      });
+
       const updatedDb: DatabaseState = {
-        master_siswa: res.master_siswa?.length ? res.master_siswa : current.master_siswa,
+        master_siswa: sanitizedMasterSiswa,
         master_guru: res.master_guru?.length ? res.master_guru : current.master_guru,
         master_kelas: res.master_kelas?.length ? res.master_kelas : current.master_kelas,
         siswa_kelas: res.siswa_kelas?.length ? res.siswa_kelas : current.siswa_kelas,

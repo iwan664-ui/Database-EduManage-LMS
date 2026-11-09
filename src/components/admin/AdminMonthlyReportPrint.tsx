@@ -289,8 +289,8 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
               </tr>
             </thead>
             <tbody>
-              {reportData.map((row) => (
-                <tr key={row.siswa} className="border-b border-slate-200 print:border-slate-300">
+              {reportData.map((row, idx) => (
+                <tr key={`report_row_${row.siswa}_${idx}`} className="border-b border-slate-200 print:border-slate-300">
                   <td className="p-2 border border-slate-300 text-center font-mono">{row.no}</td>
                   <td className="p-2 border border-slate-300 font-bold">{row.siswa}</td>
                   <td className="p-2 border border-slate-300 text-center font-mono">{row.hadir}</td>

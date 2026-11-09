@@ -238,3 +238,82 @@ export interface StudentAdabRecord {
   deskripsi: string;
   pencatat: string;
 }
+
+// Assignment & Homework Hub (Tugas & Pengumpulan)
+export interface TugasItem {
+  id: string;
+  judul: string;
+  mapel: string;
+  guru: string;
+  kelas: string;
+  tenggat: string; // YYYY-MM-DD
+  waktu_tenggat: string; // HH:mm
+  instruksi: string;
+  bobot: number;
+  kkm: number; // 85
+  lampiran?: string;
+}
+
+export interface PengumpulanTugas {
+  id: string;
+  id_tugas: string;
+  siswa: string;
+  tanggal_kumpul: string;
+  teks_jawaban: string;
+  link_lampiran?: string;
+  status: 'Menunggu Dinilai' | 'Sudah Dinilai';
+  nilai?: number;
+  catatan_guru?: string;
+  dinilai_oleh?: string;
+}
+
+// Virtual Classroom & Live Halaqah
+export interface VirtualSessionItem {
+  id: string;
+  judul: string;
+  mapel: string;
+  guru: string;
+  tanggal: string;
+  waktu: string;
+  platform: 'Google Meet' | 'Zoom' | 'Live Streaming Halaqah';
+  link_meet: string;
+  status: 'Sedang Berlangsung' | 'Akan Datang' | 'Selesai';
+  deskripsi: string;
+  topik_bahasan: string[];
+}
+
+// Forum Q&A & Halaqah Ilmiah
+export interface ForumReply {
+  id: string;
+  penulis: string;
+  role: 'tutor' | 'siswa' | 'admin';
+  tanggal: string;
+  waktu: string;
+  isi: string;
+  isGuruVerified?: boolean;
+}
+
+export interface ForumDiscussionItem {
+  id: string;
+  penulis: string;
+  role: 'tutor' | 'siswa' | 'admin';
+  mapel: string;
+  judul: string;
+  pertanyaan: string;
+  tanggal: string;
+  likes: number;
+  isSolved: boolean;
+  replies: ForumReply[];
+}
+
+// Pengumuman & Bulletin Sekolah
+export interface PengumumanItem {
+  id: string;
+  judul: string;
+  isi: string;
+  kategori: 'Penting' | 'Akademik' | 'Tahfidz' | 'Kegiatan' | 'Parenting';
+  tanggal: string;
+  target: 'Semua' | 'Santri & Walmur' | 'Guru & Tutor';
+  penerbit: string;
+  isPinned: boolean;
+}

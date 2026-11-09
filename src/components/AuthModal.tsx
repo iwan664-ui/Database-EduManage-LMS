@@ -206,6 +206,17 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     onLogin(user);
   };
 
+  // Deduplicate master_siswa to prevent duplicate options and React key collisions
+  const uniqueStudents = React.useMemo(() => {
+    const seen = new Set<string>();
+    return database.master_siswa.filter((s) => {
+      const normalized = (s.siswa || '').trim().toLowerCase();
+      if (!normalized || seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
+  }, [database.master_siswa]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fade-in">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-md w-full overflow-hidden flex flex-col">
@@ -400,8 +411,8 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
                   onChange={(e) => setSelectedStudent(e.target.value)}
                   className="w-full text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                 >
-                  {database.master_siswa.map((s) => (
-                    <option key={s.email_siswa + s.siswa} value={s.siswa}>
+                  {uniqueStudents.map((s, idx) => (
+                    <option key={`auth_opt_${s.siswa}_${idx}`} value={s.siswa}>
                       {s.siswa} — {s.cabang}
                     </option>
                   ))}

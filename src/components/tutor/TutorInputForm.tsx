@@ -436,7 +436,7 @@ export function TutorInputForm({
                     const isRemedial = numVal !== null && numVal < KKM_STANDARD;
 
                     return (
-                      <React.Fragment key={row.siswa}>
+                      <React.Fragment key={`tutor_row_${row.siswa}_${idx}`}>
                         <tr className="hover:bg-slate-50/80 transition-colors">
                           {/* KOLOM 1: NO */}
                           <td className="py-3.5 px-4 text-center font-mono font-bold text-slate-500 border-r border-slate-100 bg-slate-50/30">

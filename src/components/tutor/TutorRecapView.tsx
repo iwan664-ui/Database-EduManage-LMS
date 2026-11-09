@@ -236,8 +236,8 @@ export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {studentRecap.map((s) => (
-                  <tr key={s.siswa} className="hover:bg-slate-50/70 transition-colors">
+                {studentRecap.map((s, idx) => (
+                  <tr key={`recap_${s.siswa}_${s.kelas}_${idx}`} className="hover:bg-slate-50/70 transition-colors">
                     <td className="px-4 py-3 font-bold text-slate-900">{s.siswa}</td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-slate-800">{s.kelas}</div>

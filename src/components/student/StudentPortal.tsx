@@ -7,6 +7,9 @@ import { StudentScheduleView } from './StudentScheduleView';
 import { CbtExamEngine } from '../cbt/CbtExamEngine';
 import { DigitalMaktabah } from '../library/DigitalMaktabah';
 import { StudentAdabCharacterView } from '../adab/StudentAdabCharacterView';
+import { AssignmentHub } from '../assignment/AssignmentHub';
+import { VirtualClassroomHub } from '../virtual/VirtualClassroomHub';
+import { AnnouncementBulletinBoard } from '../announcement/AnnouncementBulletinBoard';
 import {
   User,
   Calendar,
@@ -37,6 +40,9 @@ import {
   IdCard,
   FileQuestion,
   Star,
+  Video,
+  Megaphone,
+  FileCheck,
 } from 'lucide-react';
 
 interface StudentPortalProps {
@@ -46,8 +52,8 @@ interface StudentPortalProps {
 }
 
 export function StudentPortal({ currentUser, database, onSelectOtherStudent }: StudentPortalProps) {
-  // Tabs: 'radar' | 'mutabaah' | 'cbt' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
-  const [activeTab, setActiveTab] = useState<'radar' | 'mutabaah' | 'cbt' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
+  // Tabs: 'radar' | 'mutabaah' | 'cbt' | 'tugas' | 'virtual' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'pengumuman' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
+  const [activeTab, setActiveTab] = useState<'radar' | 'mutabaah' | 'cbt' | 'tugas' | 'virtual' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'pengumuman' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
   const [selectedStudentName, setSelectedStudentName] = useState<string>(currentUser.name);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [reportModalTab, setReportModalTab] = useState<'rapor' | 'piagam' | 'whatsapp'>('rapor');
@@ -69,6 +75,17 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
       email_siswa: currentUser.email || 'siswa@alwildan29.sch.id',
     };
   }, [database.master_siswa, selectedStudentName]);
+
+  // Unique students to prevent duplicate options and React key collision
+  const uniqueStudents = useMemo(() => {
+    const seen = new Set<string>();
+    return database.master_siswa.filter((s) => {
+      const normalized = (s.siswa || '').trim().toLowerCase();
+      if (!normalized || seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
+  }, [database.master_siswa]);
 
   // Cari kelas-kelas yang diikuti siswa
   const enrolledClasses = useMemo(() => {
@@ -461,8 +478,8 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
                 }}
                 className="text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
               >
-                {database.master_siswa.map((s) => (
-                  <option key={s.email_siswa + s.siswa} value={s.siswa}>
+                {uniqueStudents.map((s, idx) => (
+                  <option key={`stu_portal_${s.siswa}_${idx}`} value={s.siswa}>
                     {s.siswa} ({s.cabang})
                   </option>
                 ))}
@@ -510,6 +527,30 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           </button>
 
           <button
+            onClick={() => setActiveTab('tugas')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+              activeTab === 'tugas'
+                ? 'bg-blue-700 text-white shadow-sm ring-2 ring-blue-700/30'
+                : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
+            }`}
+          >
+            <FileCheck className="w-3.5 h-3.5 text-orange-400" />
+            Tugas & PR
+          </button>
+
+          <button
+            onClick={() => setActiveTab('virtual')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+              activeTab === 'virtual'
+                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
+                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+            }`}
+          >
+            <Video className="w-3.5 h-3.5 text-emerald-600" />
+            Kelas Virtual & Forum
+          </button>
+
+          <button
             onClick={() => setActiveTab('maktabah')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
               activeTab === 'maktabah'
@@ -531,6 +572,18 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           >
             <Star className="w-3.5 h-3.5 text-amber-500" />
             Bintang Akhlak & Adab
+          </button>
+
+          <button
+            onClick={() => setActiveTab('pengumuman')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+              activeTab === 'pengumuman'
+                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
+                : 'bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200'
+            }`}
+          >
+            <Megaphone className="w-3.5 h-3.5 text-orange-500" />
+            Pengumuman
           </button>
 
           <button
@@ -1046,10 +1099,37 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
       )}
 
       {/* ============================================================== */}
+      {/* TAB: TUGAS & PENGERJAAN PR DIGITAL                             */}
+      {/* ============================================================== */}
+      {activeTab === 'tugas' && (
+        <AssignmentHub
+          currentUser={currentUser}
+          database={database}
+          onGradeSubmitted={() => {
+            if (onSelectOtherStudent) onSelectOtherStudent(selectedStudentName);
+          }}
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: KELAS VIRTUAL & FORUM TANYA JAWAB ASATIDZ                 */}
+      {/* ============================================================== */}
+      {activeTab === 'virtual' && (
+        <VirtualClassroomHub currentUser={currentUser} />
+      )}
+
+      {/* ============================================================== */}
       {/* TAB: DIGITAL MAKTABAH & E-LEARNING (MUROTTAL & HADITS)         */}
       {/* ============================================================== */}
       {activeTab === 'maktabah' && (
         <DigitalMaktabah />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: PAPAN PENGUMUMAN RESMI SEKOLAH                            */}
+      {/* ============================================================== */}
+      {activeTab === 'pengumuman' && (
+        <AnnouncementBulletinBoard currentUser={currentUser} />
       )}
 
       {/* ============================================================== */}

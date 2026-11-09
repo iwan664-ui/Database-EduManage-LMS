@@ -61,8 +61,9 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
   // Normalized search query
   const q = searchQuery.toLowerCase().trim();
 
-  // Filtered Students
+  // Filtered Students (Deduplicated)
   const filteredStudents = useMemo(() => {
+    const seen = new Set<string>();
     return database.master_siswa.filter((s) => {
       const matchCabang = selectedCabang === 'all' || s.cabang === selectedCabang;
 
@@ -91,7 +92,12 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
         selectedGuru === 'all' ||
         database.siswa_kelas.some((sk) => sk.siswa === s.siswa && sk.guru === selectedGuru);
 
-      return matchCabang && matchSearch && matchClass && matchMapel && matchGuru;
+      if (!(matchCabang && matchSearch && matchClass && matchMapel && matchGuru)) return false;
+
+      const uniqueKey = `${s.siswa.trim().toLowerCase()}_${s.cabang.trim().toLowerCase()}`;
+      if (seen.has(uniqueKey)) return false;
+      seen.add(uniqueKey);
+      return true;
     });
   }, [database.master_siswa, database.siswa_kelas, selectedCabang, selectedKelas, selectedMapel, selectedGuru, q]);
 
@@ -547,11 +553,11 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {filteredStudents.map((s) => {
+              {filteredStudents.map((s, idx) => {
                 const sClasses = database.siswa_kelas.filter((sk) => sk.siswa === s.siswa);
                 return (
                   <div
-                    key={s.siswa + s.email_siswa}
+                    key={`adm_stu_${s.siswa}_${s.email_siswa || ''}_${idx}`}
                     className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 hover:border-blue-300 transition-all text-xs"
                   >
                     <div className="font-bold text-slate-900">{s.siswa}</div>

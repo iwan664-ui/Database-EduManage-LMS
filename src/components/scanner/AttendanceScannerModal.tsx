@@ -92,10 +92,21 @@ export function AttendanceScannerModal({
     );
   };
 
-  const filteredStudents = database.master_siswa.filter((s) =>
-    s.siswa.toLowerCase().includes(searchStudent.toLowerCase()) ||
-    s.cabang.toLowerCase().includes(searchStudent.toLowerCase())
-  );
+  const filteredStudents = React.useMemo(() => {
+    const seen = new Set<string>();
+    const query = searchStudent.toLowerCase().trim();
+    return database.master_siswa.filter((s) => {
+      const match =
+        !query ||
+        s.siswa.toLowerCase().includes(query) ||
+        s.cabang.toLowerCase().includes(query);
+      if (!match) return false;
+      const key = `${s.siswa.toLowerCase().trim()}_${s.cabang.toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [database.master_siswa, searchStudent]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fade-in">
@@ -213,9 +224,9 @@ export function AttendanceScannerModal({
             </div>
 
             <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
-              {filteredStudents.slice(0, 6).map((s) => (
+              {filteredStudents.slice(0, 6).map((s, idx) => (
                 <div
-                  key={s.email_siswa + s.siswa}
+                  key={`scanner_item_${s.siswa}_${s.email_siswa || ''}_${idx}`}
                   onClick={() => handleSimulateScan(s)}
                   className="p-2.5 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 flex items-center justify-between gap-3 cursor-pointer transition-all text-xs"
                 >
