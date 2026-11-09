@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { DatabaseState, KehadiranStatus, MasterKelas } from '../../types';
 import { useToast } from '../Toast';
 import { StudentReportModal } from '../student/StudentReportModal';
+import { PdfExportService } from '../../services/pdfExportService';
 import {
   Users,
   GraduationCap,
@@ -35,6 +36,7 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
   const [selectedMapel, setSelectedMapel] = useState<string>('all');
   const [selectedGuru, setSelectedGuru] = useState<string>('all');
   const [showExportMenu, setShowExportMenu] = useState<boolean>(false);
+  const [showPdfMenu, setShowPdfMenu] = useState<boolean>(false);
   const [selectedStudentForReport, setSelectedStudentForReport] = useState<string | null>(null);
 
   // Class Lookup Map
@@ -169,6 +171,43 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
     setSelectedKelas('all');
     setSelectedMapel('all');
     setSelectedGuru('all');
+  };
+
+  const handleExportPdf = (type: 'absensi' | 'nilai') => {
+    if (type === 'absensi') {
+      if (filteredAbsensi.length === 0) {
+        showToast('Data Kosong', 'Tidak ada data presensi untuk diekspor ke PDF.', 'warning');
+        return;
+      }
+      const classLabel =
+        selectedKelas === 'all'
+          ? (selectedCabang === 'all' ? 'Semua Kampus & Kelas' : `Kampus ${selectedCabang}`)
+          : selectedKelas;
+
+      PdfExportService.exportAttendanceHistoryPdf({
+        userName: 'Administrator LMS Al-Wildan 29',
+        filterClass: classLabel,
+        logs: filteredAbsensi,
+      });
+      showToast('PDF Berhasil Diunduh!', `${filteredAbsensi.length} catatan presensi tersimpan ke dokumen PDF resmi.`, 'success');
+    } else {
+      if (filteredNilai.length === 0) {
+        showToast('Data Kosong', 'Tidak ada data nilai untuk diekspor ke PDF.', 'warning');
+        return;
+      }
+      const classLabel =
+        selectedKelas === 'all'
+          ? (selectedCabang === 'all' ? 'Semua Kelas' : `Kampus ${selectedCabang}`)
+          : selectedKelas;
+
+      PdfExportService.exportGradeHistoryPdf({
+        userName: 'Administrator LMS Al-Wildan 29',
+        filterClass: classLabel,
+        filterSubject: selectedMapel === 'all' ? 'Semua Mapel' : selectedMapel,
+        logs: filteredNilai,
+      });
+      showToast('PDF Berhasil Diunduh!', `${filteredNilai.length} catatan nilai tersimpan ke dokumen PDF resmi.`, 'success');
+    }
   };
 
   const handleExportCsv = (type: 'absensi' | 'nilai' | 'siswa') => {
@@ -468,68 +507,134 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
             </span>
           </div>
 
-          {/* Export to CSV Button with Dropdown */}
-          <div className="relative shrink-0">
-            <button
-              type="button"
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="w-full sm:w-auto py-2 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-sm"
-              title="Download data terfilter sebagai file CSV"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export to CSV</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
+          {/* Export Action Buttons (PDF & CSV) */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Export to PDF Button with Dropdown (jsPDF & jspdf-autotable) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPdfMenu(!showPdfMenu);
+                  setShowExportMenu(false);
+                }}
+                className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm hover:shadow cursor-pointer"
+                title="Unduh rekapan sebagai dokumen PDF formal ber-kop resmi"
+              >
+                <FileText className="w-3.5 h-3.5 text-blue-200" />
+                <span>Unduh PDF</span>
+                <ChevronDown className="w-3 h-3 text-blue-200" />
+              </button>
 
-            {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-60 rounded-xl bg-white border border-slate-200 shadow-xl py-1.5 z-30 animate-fade-in text-xs">
-                <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                  Pilih Format Data:
+              {showPdfMenu && (
+                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-30 animate-fade-in text-xs">
+                  <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Format Dokumen PDF (jsPDF):
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleExportPdf('absensi');
+                      setShowPdfMenu(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <div>
+                        <div className="font-bold text-slate-900">PDF Log Presensi</div>
+                        <div className="text-[10px] text-slate-400">Verifikasi kehadiran resmi</div>
+                      </div>
+                    </span>
+                    <span className="font-mono text-[11px] font-semibold text-slate-400">({filteredAbsensi.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleExportPdf('nilai');
+                      setShowPdfMenu(false);
+                    }}
+                    className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors cursor-pointer border-t border-slate-100"
+                  >
+                    <span className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-orange-600" />
+                      <div>
+                        <div className="font-bold text-slate-900">PDF Rekap Nilai Siswa</div>
+                        <div className="text-[10px] text-slate-400">Standar ketuntasan KKM 85</div>
+                      </div>
+                    </span>
+                    <span className="font-mono text-[11px] font-semibold text-slate-400">({filteredNilai.length})</span>
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleExportCsv('absensi');
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Log Presensi</span>
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-400">({filteredAbsensi.length} data)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleExportCsv('nilai');
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Log Nilai Siswa</span>
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-400">({filteredNilai.length} data)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleExportCsv('siswa');
-                    setShowExportMenu(false);
-                  }}
-                  className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors"
-                >
-                  <span className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Daftar Siswa Terfilter</span>
-                  </span>
-                  <span className="font-mono text-[11px] text-slate-400">({filteredStudents.length} siswa)</span>
-                </button>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Export to CSV Button with Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowExportMenu(!showExportMenu);
+                  setShowPdfMenu(false);
+                }}
+                className="py-2 px-3.5 rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50 text-slate-800 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                title="Download data terfilter sebagai file CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-slate-600" />
+                <span>Export CSV</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-slate-200 shadow-xl py-1.5 z-30 animate-fade-in text-xs">
+                  <div className="px-3 py-1 text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                    Pilih Format Data CSV:
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleExportCsv('absensi');
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Log Presensi</span>
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-400">({filteredAbsensi.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleExportCsv('nilai');
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <TrendingUp className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Log Nilai Siswa</span>
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-400">({filteredNilai.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleExportCsv('siswa');
+                      setShowExportMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-slate-50 flex items-center justify-between text-slate-700 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Daftar Siswa Terfilter</span>
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-400">({filteredStudents.length})</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

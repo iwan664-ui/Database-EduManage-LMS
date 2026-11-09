@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { DatabaseState, KehadiranStatus, MasterKelas } from '../../types';
-import { Filter, Users, Award, Percent, TrendingUp, CheckCircle, AlertCircle } from 'lucide-react';
+import { Filter, Users, Award, Percent, TrendingUp, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { PdfExportService, RecapRowData, RecapSummaryStats } from '../../services/pdfExportService';
+import { useToast } from '../Toast';
 
 interface TutorRecapViewProps {
   database: DatabaseState;
@@ -8,6 +10,7 @@ interface TutorRecapViewProps {
 }
 
 export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
+  const { showToast } = useToast();
   const [selectedClassId, setSelectedClassId] = useState<string>('all');
   const [selectedSubject, setSelectedSubject] = useState<string>('all');
 
@@ -121,15 +124,74 @@ export function TutorRecapView({ database, tutorName }: TutorRecapViewProps) {
       : 0;
   const tuntasCount = gradedStudents.filter((s) => s.avgGrade >= 85).length;
 
+  const handleDownloadPdf = () => {
+    if (studentRecap.length === 0) {
+      showToast('Data Kosong', 'Tidak ada data siswa untuk diekspor ke PDF.', 'warning');
+      return;
+    }
+
+    const currentClass =
+      selectedClassId === 'all'
+        ? 'Semua Kelas'
+        : availableClasses.find((c) => c.id_kelas === selectedClassId)?.kelas || selectedClassId;
+
+    const formattedRows: RecapRowData[] = studentRecap.map((s) => ({
+      siswa: s.siswa,
+      kelas: s.kelas,
+      cabang: s.cabang,
+      hadir: s.hadir,
+      izin: s.izin,
+      sakit: s.sakit,
+      alfa: s.alfa,
+      presenceRate: s.presenceRate,
+      avgGrade: s.grades.length > 0 ? s.avgGrade : null,
+      statusKkm: s.grades.length === 0 ? 'Belum Dinilai' : s.avgGrade >= 85 ? 'Tuntas' : 'Remedial',
+    }));
+
+    const summary: RecapSummaryStats = {
+      totalStudents,
+      overallPresence,
+      overallAvgGrade,
+      kkmThreshold: 85,
+      tuntasCount,
+      remedialCount: gradedStudents.length - tuntasCount,
+    };
+
+    PdfExportService.exportTutorRecapPdf({
+      tutorName: tutorName || 'Guru Al-Wildan',
+      className: currentClass,
+      subjectName: selectedSubject,
+      rows: formattedRows,
+      summary,
+    });
+
+    showToast(
+      'PDF Berhasil Diunduh!',
+      `Dokumen rekapan ${studentRecap.length} santri berhasil disimpan dengan format resmi.`,
+      'success'
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header & Filter Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Rekapitulasi Presensi & Nilai Siswa</h2>
-          <p className="text-xs text-slate-500">
-            Analisis akumulatif kehadiran siswa dan rata-rata pencapaian nilai per kelas dan mata pelajaran.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Rekapitulasi Presensi & Nilai Siswa</h2>
+            <p className="text-xs text-slate-500">
+              Analisis akumulatif kehadiran siswa dan rata-rata pencapaian nilai per kelas dan mata pelajaran.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDownloadPdf}
+            className="self-start sm:self-auto py-2 px-3.5 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-800 hover:to-indigo-900 text-white font-bold text-xs shadow-sm hover:shadow-md transition-all flex items-center gap-2 cursor-pointer border border-blue-500/30"
+            title="Unduh Rekapan PDF Formal ber-Kop Al-Wildan"
+          >
+            <FileText className="w-4 h-4 text-blue-200" />
+            <span>Unduh Rekap PDF</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">

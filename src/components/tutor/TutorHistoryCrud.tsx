@@ -15,7 +15,9 @@ import {
   History,
   BookOpen,
   Download,
+  FileText,
 } from 'lucide-react';
+import { PdfExportService } from '../../services/pdfExportService';
 
 interface TutorHistoryCrudProps {
   user: ActiveUser;
@@ -125,6 +127,32 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
       } else {
         showToast('Gagal Menghapus', res.message, 'error');
       }
+    }
+  };
+
+  const handleExportPdf = () => {
+    if (activeSubTab === 'absensi') {
+      if (filteredAbsensi.length === 0) {
+        showToast('Data Kosong', 'Tidak ada data absensi untuk diekspor ke PDF.', 'warning');
+        return;
+      }
+      PdfExportService.exportAttendanceHistoryPdf({
+        userName: user.name,
+        filterClass: selectedClassFilter,
+        logs: filteredAbsensi,
+      });
+      showToast('PDF Berhasil Diunduh!', `${filteredAbsensi.length} catatan presensi berhasil diekspor ke PDF formal.`, 'success');
+    } else {
+      if (filteredNilai.length === 0) {
+        showToast('Data Kosong', 'Tidak ada data nilai untuk diekspor ke PDF.', 'warning');
+        return;
+      }
+      PdfExportService.exportGradeHistoryPdf({
+        userName: user.name,
+        filterClass: selectedClassFilter,
+        logs: filteredNilai,
+      });
+      showToast('PDF Berhasil Diunduh!', `${filteredNilai.length} catatan nilai berhasil diekspor ke PDF formal.`, 'success');
     }
   };
 
@@ -280,16 +308,29 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
             </select>
           </div>
 
-          {/* Export to CSV Button */}
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="py-2 px-3.5 rounded-xl border border-slate-300 hover:border-blue-600 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shrink-0 shadow-sm"
-            title="Download data terfilter sebagai file CSV"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export to CSV ({activeSubTab === 'absensi' ? filteredAbsensi.length : filteredNilai.length})</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Unduh PDF Button (jsPDF) */}
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              className="py-2 px-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm hover:shadow cursor-pointer"
+              title="Unduh data terfilter sebagai dokumen PDF resmi"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-100" />
+              <span>Unduh PDF</span>
+            </button>
+
+            {/* Export to CSV Button */}
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="py-2 px-3.5 rounded-xl border border-slate-300 hover:border-blue-600 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+              title="Download data terfilter sebagai file CSV"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>CSV ({activeSubTab === 'absensi' ? filteredAbsensi.length : filteredNilai.length})</span>
+            </button>
+          </div>
         </div>
       </div>
 

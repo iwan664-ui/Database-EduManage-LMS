@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { DatabaseState, MasterKelas } from '../../types';
 import { Printer, Download, Filter, Calendar, BookOpen, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { PdfExportService } from '../../services/pdfExportService';
 
 interface AdminMonthlyReportPrintProps {
   database: DatabaseState;
@@ -76,6 +77,16 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
     });
   }, [activeClass, classStudents, database.log_absensi, database.log_nilai]);
 
+  const aggregates = useMemo(() => {
+    if (reportData.length === 0) return { avgPresence: 0, avgGrade: 0, tuntasPercent: 0 };
+    const avgPresence = Math.round(reportData.reduce((acc, r) => acc + r.presenceRate, 0) / reportData.length);
+    const validGrades = reportData.filter((r) => r.avg > 0);
+    const avgGrade = validGrades.length > 0 ? Math.round((validGrades.reduce((acc, r) => acc + r.avg, 0) / validGrades.length) * 10) / 10 : 0;
+    const tuntasCount = validGrades.filter((r) => r.avg >= 85).length;
+    const tuntasPercent = validGrades.length > 0 ? Math.round((tuntasCount / validGrades.length) * 100) : 0;
+    return { avgPresence, avgGrade, tuntasPercent };
+  }, [reportData]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -119,6 +130,21 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
     document.body.removeChild(link);
   };
 
+  const handleExportPdf = () => {
+    if (!activeClass || reportData.length === 0) return;
+
+    PdfExportService.exportMonthlyReportPdf({
+      className: `${activeClass.kelas} (${activeClass.id_kelas})`,
+      branchName: activeClass.cabang,
+      subjectName: activeClass.mapel,
+      teacherName: activeClass.guru,
+      month: selectedMonth,
+      year: selectedYear,
+      rows: reportData,
+      aggregates,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Configuration Toolbar (Hidden during print) */}
@@ -131,20 +157,28 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleExportPdf}
+              className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              title="Unduh langsung sebagai file PDF formal menggunakan jsPDF"
+            >
+              <FileText className="w-4 h-4 text-emerald-100" />
+              <span>Unduh PDF (jsPDF)</span>
+            </button>
             <button
               onClick={handleExportCsv}
-              className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5"
+              className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <Download className="w-4 h-4" />
+              <Download className="w-4 h-4 text-slate-500" />
               <span>Export CSV</span>
             </button>
             <button
               onClick={handlePrint}
-              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"
+              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
-              <span>Cetak / Cetak ke PDF</span>
+              <span>Dialog Cetak</span>
             </button>
           </div>
         </div>
