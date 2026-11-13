@@ -39,6 +39,22 @@ export function AttendanceScannerModal({
     status: KehadiranStatus;
   } | null>(null);
 
+  const filteredStudents = React.useMemo(() => {
+    const seen = new Set<string>();
+    const query = searchStudent.toLowerCase().trim();
+    return database.master_siswa.filter((s) => {
+      const match =
+        !query ||
+        s.siswa.toLowerCase().includes(query) ||
+        s.cabang.toLowerCase().includes(query);
+      if (!match) return false;
+      const key = `${s.siswa.toLowerCase().trim()}_${s.cabang.toLowerCase().trim()}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [database.master_siswa, searchStudent]);
+
   if (!isOpen) return null;
 
   const playBeep = () => {
@@ -91,22 +107,6 @@ export function AttendanceScannerModal({
       'success'
     );
   };
-
-  const filteredStudents = React.useMemo(() => {
-    const seen = new Set<string>();
-    const query = searchStudent.toLowerCase().trim();
-    return database.master_siswa.filter((s) => {
-      const match =
-        !query ||
-        s.siswa.toLowerCase().includes(query) ||
-        s.cabang.toLowerCase().includes(query);
-      if (!match) return false;
-      const key = `${s.siswa.toLowerCase().trim()}_${s.cabang.toLowerCase().trim()}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  }, [database.master_siswa, searchStudent]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fade-in">

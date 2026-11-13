@@ -94,6 +94,17 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     }
   };
 
+  // Deduplicate master_siswa to prevent duplicate options and React key collisions
+  const uniqueStudents = React.useMemo(() => {
+    const seen = new Set<string>();
+    return database.master_siswa.filter((s) => {
+      const normalized = (s.siswa || '').trim().toLowerCase();
+      if (!normalized || seen.has(normalized)) return false;
+      seen.add(normalized);
+      return true;
+    });
+  }, [database.master_siswa]);
+
   if (!isOpen) return null;
 
   // Biometric login trigger
@@ -205,17 +216,6 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     await SecurityService.createSecureSession(user);
     onLogin(user);
   };
-
-  // Deduplicate master_siswa to prevent duplicate options and React key collisions
-  const uniqueStudents = React.useMemo(() => {
-    const seen = new Set<string>();
-    return database.master_siswa.filter((s) => {
-      const normalized = (s.siswa || '').trim().toLowerCase();
-      if (!normalized || seen.has(normalized)) return false;
-      seen.add(normalized);
-      return true;
-    });
-  }, [database.master_siswa]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fade-in">

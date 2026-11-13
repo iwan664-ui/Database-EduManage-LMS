@@ -1,6 +1,7 @@
 import React from 'react';
 import { ActiveUser, DatabaseState, MasterKelas } from '../../types';
 import { BookOpen, Users, Calendar, Clock, PlusCircle, BarChart3, History, ArrowRight, MapPin, ShieldCheck, Award } from 'lucide-react';
+import { TutorAttendanceChart } from './TutorAttendanceChart';
 
 interface TutorDashboardProps {
   user: ActiveUser;
@@ -123,6 +124,16 @@ export function TutorDashboard({
           </div>
         </div>
       </div>
+
+      {/* Visualisasi Tren Persentase Kehadiran (Recharts) */}
+      <TutorAttendanceChart
+        classes={displayClasses}
+        logs={database.log_absensi}
+        onSelectClass={(kelasId) => {
+          onSelectClassForInput(kelasId);
+          onNavigateTab('input');
+        }}
+      />
 
       {/* Daftar Kelas yang Diampu */}
       <div className="space-y-4">
