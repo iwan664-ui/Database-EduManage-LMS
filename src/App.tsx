@@ -5,7 +5,9 @@ import { ToastProvider, useToast } from './components/Toast';
 import { AuthModal } from './components/AuthModal';
 import { SheetsSetupModal } from './components/SheetsSetupModal';
 import { SecuritySettingsModal } from './components/SecuritySettingsModal';
+import { ScreenLockModal } from './components/ScreenLockModal';
 import { BiometricService } from './services/biometricService';
+import { SecurityService } from './services/securityService';
 import { SidebarNav } from './components/SidebarNav';
 
 // Tutor Components
@@ -111,10 +113,51 @@ function LMSApp() {
   const [hasSheetsUrl, setHasSheetsUrl] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [hasBiometric, setHasBiometric] = useState<boolean>(false);
+  const [isScreenLocked, setIsScreenLocked] = useState<boolean>(false);
+  const [lockReason, setLockReason] = useState<'manual' | 'idle'>('manual');
 
   const openScannerWithMode = (mode: 'auto' | 'masuk' | 'pulang' = 'auto') => {
+    if (!currentUser || (currentUser.role !== 'tutor' && currentUser.role !== 'admin')) {
+      SecurityService.logSecurityEvent({
+        eventType: 'UNAUTHORIZED_ACCESS_BLOCKED',
+        userName: currentUser?.name || 'Guest',
+        role: currentUser?.role || 'guest',
+        details: 'Akses ke Scanner QR Gerbang diblokir karena peran tidak berwenang.',
+      });
+      showToast('Akses Ditolak', 'Hanya Guru atau Administrator yang dapat membuka Scanner QR.', 'error');
+      return;
+    }
     setScannerInitialMode(mode);
     setShowScannerModal(true);
+  };
+
+  const openSheetsSetupGuarded = () => {
+    if (!currentUser || currentUser.role !== 'admin') {
+      SecurityService.logSecurityEvent({
+        eventType: 'UNAUTHORIZED_ACCESS_BLOCKED',
+        userName: currentUser?.name || 'Guest',
+        role: currentUser?.role || 'guest',
+        details: 'Percobaan membuka Setup Google Sheets oleh akun non-Admin diblokir.',
+      });
+      showToast('Khusus Administrator', 'Pengaturan Google Sheets hanya dapat diakses oleh Admin.', 'error');
+      return;
+    }
+    setShowSheetsModal(true);
+  };
+
+  const handleLockScreen = (reason: 'manual' | 'idle' = 'manual') => {
+    if (!currentUser) return;
+    setLockReason(reason);
+    setIsScreenLocked(true);
+    SecurityService.logSecurityEvent({
+      eventType: 'SCREEN_LOCKED',
+      userName: currentUser.name,
+      role: currentUser.role,
+      details:
+        reason === 'idle'
+          ? 'Layar portal dikunci otomatis karena batas waktu tidak aktif (idle) tercapai.'
+          : 'Layar portal dikunci secara manual oleh pengguna.',
+    });
   };
 
   const openPortalLogin = (role: 'tutor' | 'siswa' | 'admin') => {
@@ -130,9 +173,106 @@ function LMSApp() {
     }
   }, [currentUser]);
 
+  // Anti-Tamper Session Integrity & Idle Auto-Lock Enforcement
+  useEffect(() => {
+    if (!currentUser) {
+      setIsScreenLocked(false);
+      return;
+    }
+
+    let isMounted = true;
+
+    const enforceSecurityChecks = async (checkServer = false) => {
+      const check = await SecurityService.verifySessionIntegrity({
+        name: currentUser.name,
+        role: currentUser.role,
+      });
+
+      if (!isMounted) return;
+
+      if (!check.valid) {
+        if (check.reason === 'idle') {
+          handleLockScreen('idle');
+          return;
+        }
+        localStorage.removeItem('edumanage_user');
+        setCurrentUser(null);
+        setShowAuthModal(true);
+        showToast(
+          check.reason === 'tampered' ? 'Peringatan Keamanan Sesi' : 'Sesi Berakhir',
+          check.reason === 'tampered'
+            ? 'Integritas sesi tidak valid atau dimodifikasi. Silakan login ulang secara aman.'
+            : 'Sesi Anda telah berakhir. Silakan masuk kembali.',
+          'warning'
+        );
+        return;
+      }
+
+      if (checkServer) {
+        const serverOk = await SecurityService.verifyWithServer();
+        if (!isMounted) return;
+        if (!serverOk) {
+          localStorage.removeItem('edumanage_user');
+          SecurityService.clearSession();
+          setCurrentUser(null);
+          setShowAuthModal(true);
+          showToast(
+            'Verifikasi Server Diperlukan',
+            'Sesi token Anda tidak aktif di server. Silakan login ulang.',
+            'info'
+          );
+        }
+      }
+    };
+
+    enforceSecurityChecks(true);
+
+    // Throttled user activity tracker for idle auto-lock
+    let lastTouch = Date.now();
+    const onUserActivity = () => {
+      const now = Date.now();
+      if (now - lastTouch > 15000) {
+        lastTouch = now;
+        SecurityService.touchActivity();
+      }
+    };
+
+    window.addEventListener('mousemove', onUserActivity, { passive: true });
+    window.addEventListener('keydown', onUserActivity, { passive: true });
+    window.addEventListener('mousedown', onUserActivity, { passive: true });
+    window.addEventListener('touchstart', onUserActivity, { passive: true });
+
+    // Cross-tab tampering / logout detection
+    const onStorageChange = (e: StorageEvent) => {
+      if (
+        e.key === 'edumanage_user' ||
+        e.key === 'edumanage_secure_session'
+      ) {
+        enforceSecurityChecks(false);
+      }
+    };
+    window.addEventListener('storage', onStorageChange);
+
+    // Periodic integrity & idle check every 20 seconds
+    const interval = window.setInterval(() => {
+      enforceSecurityChecks(false);
+    }, 20000);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('mousemove', onUserActivity);
+      window.removeEventListener('keydown', onUserActivity);
+      window.removeEventListener('mousedown', onUserActivity);
+      window.removeEventListener('touchstart', onUserActivity);
+      window.removeEventListener('storage', onStorageChange);
+      window.clearInterval(interval);
+    };
+  }, [currentUser]);
+
   // Save current user to localStorage
   const handleLogin = (user: ActiveUser) => {
     setCurrentUser(user);
+    setIsScreenLocked(false);
     localStorage.setItem('edumanage_user', JSON.stringify(user));
     setShowAuthModal(false);
 
@@ -149,11 +289,13 @@ function LMSApp() {
     showToast(`Selamat Datang, ${user.name}!`, `Masuk sebagai ${user.role.toUpperCase()}`, 'success');
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await SecurityService.logoutFromServer();
     localStorage.removeItem('edumanage_user');
+    setIsScreenLocked(false);
     setCurrentUser(null);
     setShowAuthModal(true);
-    showToast('Sesi Berakhir', 'Anda telah keluar. Silakan pilih portal untuk masuk.', 'info');
+    showToast('Sesi Berakhir', 'Anda telah keluar dengan aman. Token sesi telah dicabut.', 'info');
   };
 
   const reloadDatabase = () => {
@@ -195,13 +337,13 @@ function LMSApp() {
 
             <img
               src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
-              alt="Logo AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK"
+              alt="Logo AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY"
               className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-full bg-white p-0.5 shadow-sm border border-slate-200 shrink-0"
             />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h1 className="text-sm sm:text-base font-extrabold text-blue-950 tracking-tight leading-tight truncate">
-                  AL-WILDAN ISLAMIC SCHOOL 29
+                  AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
                 </h1>
                 <span className="hidden sm:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
                   Google Sheets Sync
@@ -211,7 +353,7 @@ function LMSApp() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                Kota Depok · Learning Management System (LMS)
+                BSD City, Tangerang Selatan · Learning Management System (LMS)
               </p>
             </div>
           </div>
@@ -295,7 +437,8 @@ function LMSApp() {
           onOpenAuthModal={(role) => openPortalLogin(role)}
           onOpenScanner={() => openScannerWithMode('auto')}
           onOpenSecurity={() => setShowSecurityModal(true)}
-          onOpenSheets={() => setShowSheetsModal(true)}
+          onOpenSheets={openSheetsSetupGuarded}
+          onLockScreen={() => handleLockScreen('manual')}
           onLogout={handleLogout}
           hasBiometric={hasBiometric}
           hasSheetsUrl={hasSheetsUrl}
@@ -318,7 +461,7 @@ function LMSApp() {
                   alt="Logo"
                   className="w-5 h-5 rounded-full object-contain"
                 />
-                <span>AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK</span>
+                <span>AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY</span>
               </div>
               <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
                 Sistem Manajemen Pembelajaran & Portal Terpadu (LMS)
@@ -379,7 +522,7 @@ function LMSApp() {
                   <div className="space-y-2.5 pt-2 border-t border-slate-100 text-xs text-slate-700 font-medium">
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                      <span>Format 4 Kolom: <strong>NO, NAMA, KEHADIRAN, NILAI</strong></span>
+                      <span>Format 5 Kolom: <strong>NO, NAMA, KEHADIRAN, NILAI, MATERI</strong></span>
                     </div>
                     <div className="flex items-start gap-2">
                       <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
@@ -736,6 +879,16 @@ function LMSApp() {
           }
         }}
         currentUser={currentUser}
+        onLockScreen={() => handleLockScreen('manual')}
+      />
+
+      {/* Screen Lock / Idle Timeout Shield Overlay */}
+      <ScreenLockModal
+        isLockedScreen={isScreenLocked}
+        currentUser={currentUser}
+        lockReason={lockReason}
+        onUnlock={() => setIsScreenLocked(false)}
+        onForceLogout={handleLogout}
       />
 
       {/* Attendance Barcode & QR Scanner Modal */}

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { DatabaseState, MasterKelas } from '../../types';
 import { Printer, Download, Filter, Calendar, BookOpen, CheckCircle, AlertCircle, FileText } from 'lucide-react';
 import { PdfExportService } from '../../services/pdfExportService';
+import { SecurityService } from '../../services/securityService';
 
 interface AdminMonthlyReportPrintProps {
   database: DatabaseState;
@@ -107,7 +108,7 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
     ];
     const rows = reportData.map((r) => [
       r.no,
-      `"${r.siswa}"`,
+      r.siswa,
       r.email,
       r.hadir,
       r.izin,
@@ -120,7 +121,10 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
 
     const csvContent =
       'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+      [
+        headers.map(SecurityService.escapeCsvCell).join(','),
+        ...rows.map((row) => row.map(SecurityService.escapeCsvCell).join(',')),
+      ].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -236,18 +240,18 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
           <div className="flex items-center gap-4">
             <img
               src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
-              alt="Logo AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK"
+              alt="Logo AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY"
               className="w-16 h-16 object-contain shrink-0"
             />
             <div>
               <h1 className="text-lg md:text-xl font-extrabold uppercase tracking-tight text-slate-900">
-                AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK
+                AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
               </h1>
               <p className="text-xs text-slate-700 font-semibold">
                 Pendidikan Berkualitas Berbasis Al-Qur'an, Karakter Islami & Kurikulum Internasional
               </p>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                Grand Depok City, Kota Depok, Jawa Barat · Telp: (021) 7788-2929 · Email: akademik@alwildan29depok.sch.id
+                BSD City, Tangerang Selatan, Banten · Telp: (021) 5316-3030 · Email: akademik@alwildan3bsd.sch.id
               </p>
             </div>
           </div>
@@ -256,7 +260,7 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
               Laporan Resmi
             </span>
             <div className="text-[11px] text-slate-500 font-mono mt-1">
-              No: {activeClass?.id_kelas}/AW29-DEPOK/{selectedMonth.toUpperCase()}/{selectedYear}
+              No: {activeClass?.id_kelas}/AW3-BSD/{selectedMonth.toUpperCase()}/{selectedYear}
             </div>
           </div>
         </div>

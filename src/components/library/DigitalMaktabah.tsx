@@ -96,7 +96,7 @@ export function DigitalMaktabah() {
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-xs font-bold text-emerald-200">
               <Sparkles className="w-3.5 h-3.5 text-orange-400" />
-              <span>Digital Maktabah & E-Learning Center AL-WILDAN 29</span>
+              <span>Digital Maktabah & E-Learning Center AL-WILDAN 3 BSD CITY</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
               Perpustakaan Digital, Murottal 30 Juz & Hadits

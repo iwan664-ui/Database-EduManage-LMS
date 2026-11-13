@@ -3,6 +3,7 @@ import { DatabaseState, KehadiranStatus, MasterKelas } from '../../types';
 import { useToast } from '../Toast';
 import { StudentReportModal } from '../student/StudentReportModal';
 import { PdfExportService } from '../../services/pdfExportService';
+import { SecurityService } from '../../services/securityService';
 import {
   Users,
   GraduationCap,
@@ -186,9 +187,15 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
           : selectedKelas;
 
       PdfExportService.exportAttendanceHistoryPdf({
-        userName: 'Administrator LMS Al-Wildan 29',
+        userName: 'Administrator LMS Al-Wildan 3 BSD',
         filterClass: classLabel,
         logs: filteredAbsensi,
+      });
+      SecurityService.logSecurityEvent({
+        eventType: 'DATA_EXPORTED',
+        userName: 'Administrator LMS',
+        role: 'admin',
+        details: `Ekspor PDF presensi (${filteredAbsensi.length} baris).`,
       });
       showToast('PDF Berhasil Diunduh!', `${filteredAbsensi.length} catatan presensi tersimpan ke dokumen PDF resmi.`, 'success');
     } else {
@@ -202,21 +209,23 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
           : selectedKelas;
 
       PdfExportService.exportGradeHistoryPdf({
-        userName: 'Administrator LMS Al-Wildan 29',
+        userName: 'Administrator LMS Al-Wildan 3 BSD',
         filterClass: classLabel,
         filterSubject: selectedMapel === 'all' ? 'Semua Mapel' : selectedMapel,
         logs: filteredNilai,
+      });
+      SecurityService.logSecurityEvent({
+        eventType: 'DATA_EXPORTED',
+        userName: 'Administrator LMS',
+        role: 'admin',
+        details: `Ekspor PDF nilai (${filteredNilai.length} baris).`,
       });
       showToast('PDF Berhasil Diunduh!', `${filteredNilai.length} catatan nilai tersimpan ke dokumen PDF resmi.`, 'success');
     }
   };
 
   const handleExportCsv = (type: 'absensi' | 'nilai' | 'siswa') => {
-    const escapeCsv = (val: string | number | undefined | null) => {
-      if (val === null || val === undefined) return '""';
-      const str = String(val).replace(/"/g, '""');
-      return `"${str}"`;
-    };
+    const escapeCsv = SecurityService.escapeCsvCell;
 
     const dateStr = new Date().toISOString().split('T')[0];
     const filterTag = `${selectedCabang !== 'all' ? selectedCabang.replace(/\s+/g, '') : 'SemuaCabang'}_${selectedKelas !== 'all' ? selectedKelas : 'SemuaKelas'}`;
@@ -297,7 +306,7 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-slate-200 mb-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              AL-WILDAN 29 KOTA DEPOK · Monitoring Central Administrator
+              AL-WILDAN 3 BSD CITY · Monitoring Central Administrator
             </div>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight">
               Dashboard Akademik & Operasional

@@ -406,7 +406,7 @@ export function AssignmentHub({ currentUser, database, onGradeSubmitted }: Assig
 
               <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 flex items-center gap-2 font-medium">
                 <Award className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Target nilai tugas berpatokan standar KKM 85 AL-WILDAN 29 Depok.</span>
+                <span>Target nilai tugas berpatokan standar KKM 85 AL-WILDAN 3 BSD CITY.</span>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2">

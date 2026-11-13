@@ -27,7 +27,7 @@ export interface RecapSummaryStats {
 /**
  * Service untuk men-generate dokumen PDF formal dan rapi
  * Menggunakan jsPDF dan jspdf-autotable
- * Dilengkapi kop resmi AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK
+ * Dilengkapi kop resmi AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
  */
 export class PdfExportService {
   /**
@@ -48,7 +48,7 @@ export class PdfExportService {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.setTextColor(30, 41, 59); // Slate-800
-    doc.text('AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK', pageWidth / 2, 14, { align: 'center' });
+    doc.text('AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY', pageWidth / 2, 14, { align: 'center' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8.5);
@@ -60,7 +60,7 @@ export class PdfExportService {
       { align: 'center' }
     );
     doc.text(
-      'Kampus GDC Depok · Cinere Depok · Sawangan Depok | Standar Ketuntasan Minimal (KKM): 85',
+      'BSD City, Tangerang Selatan · Banten | Standar Ketuntasan Minimal (KKM): 85',
       pageWidth / 2,
       23,
       { align: 'center' }
@@ -157,7 +157,7 @@ export class PdfExportService {
     doc.setTextColor(71, 85, 105);
     doc.text('Mengetahui,', leftX, signY);
     doc.text('Kepala Kurikulum & Akademik', leftX, signY + 4.5);
-    doc.text('AL-WILDAN 29 KOTA DEPOK', leftX, signY + 9);
+    doc.text('AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY', leftX, signY + 9);
 
     doc.setDrawColor(148, 163, 184);
     doc.line(leftX, signY + 28, leftX + 45, signY + 28);
@@ -167,14 +167,14 @@ export class PdfExportService {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100, 116, 139);
-    doc.text('NIP. 29.AKD.2021.004', leftX, signY + 36);
+    doc.text('NIP. 03.AKD.2021.004', leftX, signY + 36);
 
     // Kolom Tanda Tangan Kanan: Guru / Admin Pembuat Dokumen
     const rightX = pageWidth - 70;
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(71, 85, 105);
-    doc.text(`Depok, ${todayDate}`, rightX, signY);
+    doc.text(`BSD City, ${todayDate}`, rightX, signY);
     doc.text(signerRole, rightX, signY + 4.5);
     doc.text('Petugas Pelapor', rightX, signY + 9);
 
@@ -186,7 +186,7 @@ export class PdfExportService {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100, 116, 139);
-    doc.text('ID/Kode: AW29-TTR-AUTH', rightX, signY + 36);
+    doc.text('ID/Kode: AW3-TTR-AUTH', rightX, signY + 36);
 
     // Page numbers on all pages
     const totalPages = (doc.internal as any).getNumberOfPages();
@@ -196,7 +196,7 @@ export class PdfExportService {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(148, 163, 184);
       doc.text(
-        `Dokumen Resmi LMS AL-WILDAN 29 Depok · Halaman ${i} dari ${totalPages} · Dicetak otomatis oleh sistem`,
+        `Dokumen Resmi LMS AL-WILDAN 3 BSD CITY · Halaman ${i} dari ${totalPages} · Dicetak otomatis oleh sistem`,
         pageWidth / 2,
         pageHeight - 5,
         { align: 'center' }
@@ -441,7 +441,7 @@ export class PdfExportService {
     const startY = this.drawLetterhead(
       doc,
       'REKAPITULASI DOKUMEN NILAI ASESMEN & UJIAN SISWA',
-      'Standar Penilaian Berkelanjutan Berbasis KKM 85 · Al-Wildan Islamic School 29'
+      'Standar Penilaian Berkelanjutan Berbasis KKM 85 · AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY'
     );
 
     const validGrades = logs.map((l) => Number(l.nilai)).filter((n) => !isNaN(n));

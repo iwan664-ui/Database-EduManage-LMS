@@ -143,7 +143,7 @@ export const eModulList: EModulItem[] = [
     kategori: 'Islamic & Tahfidz',
     tingkat: 'Menengah & Lanjutan (Semua Jenjang)',
     halaman: 48,
-    penulis: 'Tim Asatidz Tahfidz AL-WILDAN 29 Depok',
+    penulis: 'Tim Asatidz Tahfidz AL-WILDAN 3 BSD CITY',
     deskripsi: 'Panduan lengkap hukum nun mati, mim sukun, makhorijul huruf, sifatul huruf, dan mad far\'i dilengkapi contoh ayat dan audio scan.',
   },
   {
@@ -153,7 +153,7 @@ export const eModulList: EModulItem[] = [
     kategori: 'Cambridge Science',
     tingkat: 'Grade 10 - 12 SMA',
     halaman: 64,
-    penulis: 'Academic Department AL-WILDAN Depok',
+    penulis: 'Academic Department AL-WILDAN 3 BSD CITY',
     deskripsi: 'Comprehensive bilingual module covering linear relations, quadratic functions, analytical geometry, and word problem methodologies.',
   },
   {

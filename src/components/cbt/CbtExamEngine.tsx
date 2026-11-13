@@ -173,7 +173,7 @@ export function CbtExamEngine({
               Pusat Evaluasi & Ujian CBT Interaktif
             </h2>
             <p className="text-xs text-blue-100 max-w-2xl leading-relaxed">
-              Sistem ujian terstandarisasi dengan penilaian otomatis real-time, timer countdown, serta pembahasan komprehensif berpatokan KKM 85 AL-WILDAN 29 Depok.
+              Sistem ujian terstandarisasi dengan penilaian otomatis real-time, timer countdown, serta pembahasan komprehensif berpatokan KKM 85 AL-WILDAN 3 BSD CITY.
             </p>
           </div>
 
@@ -444,7 +444,7 @@ export function CbtExamEngine({
               <p className="text-xs text-slate-600 max-w-lg leading-relaxed">
                 {examResult.isPass
                   ? `Alhamdulillah! Santri berhasil melampaui standar kelulusan KKM 85 dengan menjawab ${examResult.correctCount} dari ${examResult.total} soal dengan tepat.`
-                  : `Santri memperoleh nilai ${examResult.score}. Standar KKM AL-WILDAN 29 adalah ${selectedExam.kkm}. Harap pelajari kembali pembahasan di bawah.`}
+                  : `Santri memperoleh nilai ${examResult.score}. Standar KKM AL-WILDAN 3 BSD CITY adalah ${selectedExam.kkm}. Harap pelajari kembali pembahasan di bawah.`}
               </p>
             </div>
 

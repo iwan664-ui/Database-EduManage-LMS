@@ -58,7 +58,7 @@ export const initialAdabRecords: StudentAdabRecord[] = [
     kategori: 'Tahfidz & Bahasa',
     tipe: 'Poin Kebaikan (+)',
     poin: 25,
-    deskripsi: 'Juara 1 Musabaqah Hifdzil Qur\'an (MHQ) Tingkat Kota Depok Kategori 5 Juz.',
+    deskripsi: 'Juara 1 Musabaqah Hifdzil Qur\'an (MHQ) Tingkat Kota Tangerang Selatan Kategori 5 Juz.',
     pencatat: 'Ustadz Budi Santoso, S.Pd.',
   },
 ];

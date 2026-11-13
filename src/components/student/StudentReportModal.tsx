@@ -54,8 +54,8 @@ export function StudentReportModal({
   // Student info
   const student = database.master_siswa.find((s) => s.siswa === studentName) || {
     siswa: studentName,
-    cabang: 'Kampus 1 GDC Depok',
-    email_siswa: `${studentName.toLowerCase().replace(/\s+/g, '.')}@alwildan29.sch.id`,
+    cabang: 'Kampus Utama BSD City',
+    email_siswa: `${studentName.toLowerCase().replace(/\s+/g, '.')}@alwildan3bsd.sch.id`,
   };
 
   // Enrolled classes
@@ -123,7 +123,7 @@ export function StudentReportModal({
       : '• Belum terdaftar pada kegiatan ekstrakurikuler';
 
     return `*LAPORAN PERKEMBANGAN BELAJAR SANTRI*
-*AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK*
+*AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY*
 _Tanggal: ${today}_
 --------------------------------------------
 *Assalamu'alaikum Warahmatullahi Wabarakatuh,*
@@ -150,7 +150,7 @@ _"Semoga Ananda senantiasa istiqomah dalam menuntut ilmu, berakhlakul karimah, d
 
 --------------------------------------------
 *Wassalamu'alaikum Warahmatullahi Wabarakatuh*
-_AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK_`;
+_AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY_`;
   };
 
   const handleCopyWa = () => {
@@ -266,16 +266,16 @@ _AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK_`;
                   />
                   <div className="text-center">
                     <h2 className="text-lg md:text-xl font-black text-slate-900 tracking-tight uppercase">
-                      AL-WILDAN ISLAMIC SCHOOL 29
+                      AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
                     </h2>
                     <h3 className="text-xs md:text-sm font-bold text-slate-700">
-                      KOTA DEPOK — JAWA BARAT
+                      BSD CITY — TANGERANG SELATAN, BANTEN
                     </h3>
                     <p className="text-[10px] md:text-[11px] text-slate-500 max-w-lg mt-0.5">
-                      Jl. Boulevard Grand Depok City No. 29, Kota Depok · Telp: (021) 7788-2929 · Web: www.alwildan29.sch.id
+                      Kawasan BSD City, Tangerang Selatan, Banten · Web: www.alwildan3bsd.sch.id
                     </p>
                     <p className="text-[10px] font-mono text-blue-700 font-semibold mt-0.5">
-                      NPSN: 69982929 · Akreditasi A (Unggul) · Kurikulum TIC (Tahfidz, International, Curriculum)
+                      Akreditasi A (Unggul) · Kurikulum TIC (Tahfidz, International, Curriculum)
                     </p>
                   </div>
                 </div>
@@ -300,7 +300,7 @@ _AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK_`;
                   </div>
                   <div className="flex">
                     <span className="w-28 text-slate-500">Nomor Induk / ID</span>
-                    <span className="font-mono font-bold text-slate-800">: 29-DPK-{Math.abs(student.siswa.length * 137).toString().padStart(4, '0')}</span>
+                    <span className="font-mono font-bold text-slate-800">: 03-BSD-{Math.abs(student.siswa.length * 137).toString().padStart(4, '0')}</span>
                   </div>
                   <div className="flex">
                     <span className="w-28 text-slate-500">Cabang Kampus</span>
@@ -454,7 +454,7 @@ _AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK_`;
                       <QrCode className="w-14 h-14 text-slate-900" />
                     </div>
                     <span className="text-[9px] font-mono text-slate-500 mt-1">
-                      VERIFIKASI DIGITAL LMS-AW29
+                      VERIFIKASI DIGITAL LMS-AW3
                     </span>
                     <span className="text-[8px] font-mono text-blue-700">
                       SHA256: {Math.abs(student.siswa.length * 849302).toString(16).toUpperCase()}
@@ -462,8 +462,8 @@ _AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK_`;
                   </div>
 
                   <div>
-                    <p className="text-slate-500">Kota Depok, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                    <p className="text-slate-500">Kepala Sekolah AL-WILDAN 29,</p>
+                    <p className="text-slate-500">BSD City, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <p className="text-slate-500">Kepala Sekolah AL-WILDAN 3 BSD CITY,</p>
                     <div className="h-12 flex items-center justify-center">
                       <span className="text-[11px] font-serif italic text-blue-900 font-bold">
                         Dr. H. Muhammad Ilyas, Lc., M.Pd.I
@@ -497,7 +497,7 @@ _AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK_`;
                   className="w-16 h-16 object-contain"
                 />
                 <h3 className="text-xs font-mono tracking-widest text-amber-800 uppercase font-bold">
-                  AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK
+                  AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
                 </h3>
                 <h2 className="text-2xl md:text-3xl font-serif font-black text-slate-900 uppercase tracking-tight">
                   PIAGAM PENGHARGAAN
@@ -551,7 +551,7 @@ _AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK_`;
                     <span className="italic font-serif font-semibold text-slate-800">Dr. H. M. Ilyas, Lc.</span>
                   </div>
                   <div className="border-t border-slate-400 w-36 pt-1 font-bold text-slate-800">
-                    Kepala Sekolah Al-Wildan 29
+                    Kepala Sekolah Al-Wildan 3 BSD City
                   </div>
                 </div>
               </div>

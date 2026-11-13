@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { AIInsightResult, DatabaseState, MasterKelas } from '../../types';
+import { SecurityService } from '../../services/securityService';
 import { useToast } from '../Toast';
 import {
   Sparkles,
@@ -117,7 +118,8 @@ export function AdminAIInsight({ database }: AdminAIInsightProps) {
     try {
       const resp = await fetch('/api/ai-insight', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({
           className: activeClass.kelas,
           subject: activeClass.mapel,
@@ -147,7 +149,7 @@ export function AdminAIInsight({ database }: AdminAIInsightProps) {
   const copyInsightToClipboard = () => {
     if (!insight || !activeClass) return;
     const text = `📊 ANALISIS AKADEMIK & AI INSIGHT
-AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK
+AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
 Kelas: ${activeClass.kelas} - ${activeClass.mapel}
 Periode: ${selectedMonth} 2026
 Tutor: ${activeClass.guru}
@@ -180,7 +182,7 @@ ${insight.actionableRecommendations.map((r) => `• ${r}`).join('\n')}`;
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-purple-200 mb-2">
               <Sparkles className="w-3.5 h-3.5 text-purple-300" />
-              AL-WILDAN 29 KOTA DEPOK · Gemini Academic Analytics
+              AL-WILDAN 3 BSD CITY · Gemini Academic Analytics
             </div>
             <h2 className="text-xl md:text-2xl font-bold tracking-tight">
               Auto AI Insight Evaluasi Nilai Bulanan

@@ -163,7 +163,7 @@ export function StudentMutabaahTahfidz({
 
   // Share to WhatsApp
   const handleShareWa = () => {
-    const text = `*LAPORAN MUTABA'AH & TAHFIDZ SANTRI*\n*AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK*\n\n` +
+    const text = `*LAPORAN MUTABA'AH & TAHFIDZ SANTRI*\n*AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY*\n\n` +
       `Santri: *${studentName}*\n` +
       `Tanggal: ${todayStr}\n` +
       `🔥 Streak Ibadah: *${streakDays} Hari Berturut-turut*\n` +
@@ -187,7 +187,7 @@ export function StudentMutabaahTahfidz({
           <div className="space-y-1.5 max-w-2xl">
             <div className="inline-flex items-center gap-2 bg-white/10 text-orange-300 border border-white/20 px-3 py-1 rounded-full text-xs font-semibold">
               <Flame className="w-3.5 h-3.5 text-orange-400" />
-              <span>Program Unggulan Karakter & Qur'an · Al-Wildan 29 Depok</span>
+              <span>Program Unggulan Karakter & Qur'an · AL-WILDAN 3 BSD CITY</span>
             </div>
             <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
               Mutaba'ah Yaumiyah & Halaqah Tahfidz Digital
@@ -504,7 +504,7 @@ export function StudentMutabaahTahfidz({
           <div>
             <h4 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
               <Trophy className="w-4 h-4 text-orange-500" />
-              <span>Target Capaian Tahfidz Al-Wildan 29 Kota Depok</span>
+              <span>Target Capaian Tahfidz AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY</span>
             </h4>
             <p className="text-xs text-slate-500 mt-1">
               Kurikulum Tahfidz Al-Wildan menargetkan hafalan mutqin bersanad dengan standar kelulusan KKM 85.

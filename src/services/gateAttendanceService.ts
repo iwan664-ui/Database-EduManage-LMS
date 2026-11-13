@@ -15,7 +15,7 @@ const STORAGE_KEY_GATE_CONFIG = 'edumanage_gate_config_v1';
 const DEFAULT_CONFIG: GateScheduleConfig = {
   batasJamMasuk: '07:15',
   jamPulangStandar: '15:00',
-  lokasiDefault: 'Gerbang Utama Kampus 1 GDC Depok',
+  lokasiDefault: 'Gerbang Utama Kampus BSD City',
 };
 
 function getDateOffset(daysOffset: number): string {
@@ -36,7 +36,7 @@ export class GateAttendanceService {
       )
         .toString()
         .slice(0, 8);
-    return `AW29-${nisn.slice(-4)}`;
+    return `AW3-${nisn.slice(-4)}`;
   }
 
   static getScheduleConfig(): GateScheduleConfig {
@@ -101,7 +101,7 @@ export class GateAttendanceService {
         'GATE-SEED-01',
         today,
         'Ahmad Rizky Pratama',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '06:51:12',
         undefined,
@@ -117,7 +117,7 @@ export class GateAttendanceService {
         'GATE-SEED-02',
         today,
         'Bella Safitri',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '07:04:38',
         undefined,
@@ -133,7 +133,7 @@ export class GateAttendanceService {
         'GATE-SEED-03',
         today,
         'Dimas Aditya',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '07:22:05',
         undefined,
@@ -149,7 +149,7 @@ export class GateAttendanceService {
         'GATE-SEED-04',
         today,
         'Eka Nurul Fadilah',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '06:58:44',
         '15:18:20',
@@ -167,7 +167,7 @@ export class GateAttendanceService {
         'GATE-SEED-05',
         yesterday,
         'Ahmad Rizky Pratama',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '06:48:19',
         '15:32:10',
@@ -183,7 +183,7 @@ export class GateAttendanceService {
         'GATE-SEED-06',
         yesterday,
         'Bella Safitri',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '07:09:50',
         '15:15:42',
@@ -198,7 +198,7 @@ export class GateAttendanceService {
         'GATE-SEED-07',
         yesterday,
         'Dimas Aditya',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '07:12:30',
         '14:25:00',
@@ -216,7 +216,7 @@ export class GateAttendanceService {
         'GATE-SEED-08',
         twoDaysAgo,
         'Ahmad Rizky Pratama',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '06:55:04',
         '15:28:55',
@@ -231,7 +231,7 @@ export class GateAttendanceService {
         'GATE-SEED-09',
         twoDaysAgo,
         'Bella Safitri',
-        'Kampus 1 GDC Depok',
+        'Kampus Utama BSD City',
         '10 SMA Unggulan A',
         '07:19:15',
         '15:20:11',
@@ -266,7 +266,7 @@ export class GateAttendanceService {
   }
 
   /**
-   * Cari siswa berdasarkan kode kartu Smart ID (AW29-XXXX) atau nama siswa
+   * Cari siswa berdasarkan kode kartu Smart ID (AW3-XXXX / AW29-XXXX) atau nama siswa
    */
   static findStudentByCodeOrName(database: DatabaseState, query: string): MasterSiswa | undefined {
     const clean = query.trim().toLowerCase();
@@ -274,9 +274,11 @@ export class GateAttendanceService {
 
     return database.master_siswa.find((s) => {
       const cardCode = this.getStudentCardCode(s.siswa).toLowerCase();
+      const legacyCode = cardCode.replace('aw3-', 'aw29-');
       return (
         cardCode === clean ||
-        cardCode.replace('aw29-', '') === clean ||
+        legacyCode === clean ||
+        cardCode.replace('aw3-', '') === clean ||
         s.siswa.toLowerCase() === clean ||
         s.siswa.toLowerCase().includes(clean)
       );

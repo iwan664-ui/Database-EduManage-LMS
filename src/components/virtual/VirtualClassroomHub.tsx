@@ -114,7 +114,7 @@ export function VirtualClassroomHub({ currentUser }: VirtualClassroomHubProps) {
               Ruang Kelas Virtual & Forum Tanya Jawab Asatidz
             </h2>
             <p className="text-xs text-emerald-100 max-w-2xl leading-relaxed">
-              Tatap muka interaktif video conference terintegrasi, talaqqi online, serta forum diskusi keilmuan santri bersama dewan Asatidz AL-WILDAN 29 Depok.
+              Tatap muka interaktif video conference terintegrasi, talaqqi online, serta forum diskusi keilmuan santri bersama dewan Asatidz AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY.
             </p>
           </div>
 

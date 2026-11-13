@@ -20,7 +20,7 @@ const DEFAULT_SEED_REPORTS: WeeklyReportItem[] = [
     id_kelas: 'KLS-10A-MAT',
     kelas: '10 SMA Unggulan A',
     mapel: 'Matematika Wajib',
-    cabang: 'Kampus 1 GDC Depok',
+    cabang: 'Kampus Utama BSD City',
     guru: 'Budi Santoso, S.Pd.',
     periode_label: 'Pekan 1 · 02 - 08 Nov 2026',
     tanggal_mulai: '2026-11-02',
@@ -61,7 +61,7 @@ const DEFAULT_SEED_REPORTS: WeeklyReportItem[] = [
     id_kelas: 'KLS-10A-MAT',
     kelas: '10 SMA Unggulan A',
     mapel: 'Matematika Wajib',
-    cabang: 'Kampus 1 GDC Depok',
+    cabang: 'Kampus Utama BSD City',
     guru: 'Budi Santoso, S.Pd.',
     periode_label: 'Pekan 1 · 02 - 08 Nov 2026',
     tanggal_mulai: '2026-11-02',
@@ -332,7 +332,7 @@ export class WeeklyReportService {
       id_kelas: masterClass?.id_kelas || classId,
       kelas: masterClass?.kelas || enrolledClasses[0]?.kelas || 'Kelas Reguler',
       mapel: masterClass?.mapel || enrolledClasses[0]?.mapel || 'Pembelajaran Terpadu',
-      cabang: masterStudent?.cabang || masterClass?.cabang || 'Kampus 1 GDC Depok',
+      cabang: masterStudent?.cabang || masterClass?.cabang || 'Kampus Utama BSD City',
       guru: tutorName || masterClass?.guru || 'Guru Pengampu',
       periode_label: this.formatPeriodLabel(startDate, endDate),
       tanggal_mulai: startDate,
@@ -372,7 +372,7 @@ export class WeeklyReportService {
             .join('\n')
         : `• ${report.mapel}: *${report.rata_nilai > 0 ? report.rata_nilai : '-'}*`;
 
-    return `*RAPOR PEKANAN SANTRI — AL-WILDAN ISLAMIC SCHOOL 29 DEPOK*
+    return `*RAPOR PEKANAN SANTRI — AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY*
 _${report.periode_label}_
 --------------------------------------------
 *Assalamu'alaikum Warahmatullahi Wabarakatuh,*
@@ -402,7 +402,7 @@ ${report.rekomendasi_ortu}
 
 --------------------------------------------
 *Wassalamu'alaikum Warahmatullahi Wabarakatuh*
-_Laporan lengkap juga dapat diakses Orang Tua melalui Portal Santri & Walmur LMS AL-WILDAN 29._`;
+_Laporan lengkap juga dapat diakses Orang Tua melalui Portal Santri & Walmur LMS AL-WILDAN 3 BSD CITY._`;
   }
 
   static buildWhatsAppUrl(report: WeeklyReportItem): string {
@@ -419,7 +419,7 @@ _Laporan lengkap juga dapat diakses Orang Tua melalui Portal Santri & Walmur LMS
   }
 
   static buildMailtoUrl(report: WeeklyReportItem): string {
-    const subject = `[Rapor Pekanan] ${report.siswa} - ${report.periode_label} (AL-WILDAN 29 Depok)`;
+    const subject = `[Rapor Pekanan] ${report.siswa} - ${report.periode_label} (AL-WILDAN 3 BSD CITY)`;
     const body = this.formatWhatsAppMessage(report).replace(/\*/g, '').replace(/_/g, '');
     const to = (report.email_ortu || '').trim();
     return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;

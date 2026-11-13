@@ -1,13 +1,13 @@
 /**
- * Google Apps Script Backend for EduManage LMS - AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK
- * Enhanced Security Edition v2.4 (XSS Sanitized, Payload Validation, Secure Handshake)
+ * Google Apps Script Backend for EduManage LMS - AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
+ * Enhanced Security Edition v3.0 (XSS Sanitized, Payload Validation, Secure Handshake)
  * 
  * CARA DEPLOY:
  * 1. Buka Google Spreadsheet database sekolah.
  * 2. Klik Extensions > Apps Script.
  * 3. Hapus kode lama dan tempel kode ini.
  * 4. Klik Deploy > New Deployment > Web app:
- *    - Description: AL-WILDAN 29 LMS Secure API
+ *    - Description: AL-WILDAN 3 BSD CITY LMS Secure API
  *    - Execute as: Me
  *    - Who has access: Anyone
  * 5. Salin Web app URL dan masukkan ke menu Setup Google Sheets di aplikasi LMS.
@@ -35,7 +35,7 @@ function doGet(e) {
       result = { 
         success: true, 
         message: 'Google Sheets Apps Script API Online (Secured)', 
-        school: 'AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK',
+        school: 'AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY',
         timestamp: new Date().toISOString() 
       };
     } else if (action === 'getInitData') {
@@ -121,7 +121,7 @@ function sanitizeText(val) {
 function getCompleteDatabase(ss) {
   return {
     success: true,
-    school: 'AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK',
+    school: 'AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY',
     master_siswa: readSheetObjects(ss, 'master_siswa'),
     master_guru: readSheetObjects(ss, 'master_guru'),
     master_kelas: readSheetObjects(ss, 'master_kelas'),

@@ -47,7 +47,7 @@ export function StudentScheduleView({ studentName, database }: StudentScheduleVi
             </h3>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Agenda Kegiatan Belajar Mengajar (KBM) santri AL-WILDAN 29 KOTA DEPOK.
+            Agenda Kegiatan Belajar Mengajar (KBM) santri AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY.
           </p>
         </div>
 

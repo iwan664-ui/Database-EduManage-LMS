@@ -43,7 +43,7 @@ export function TutorDashboard({
       <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
         <div className="relative z-10 max-w-2xl space-y-3">
           <div className="flex items-center gap-2 text-xs text-blue-300 font-medium">
-            <span>AL-WILDAN 29 KOTA DEPOK</span>
+            <span>AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY</span>
             <span aria-hidden="true">·</span>
             <span>Portal Pendidik Terenkripsi</span>
             <span aria-hidden="true">·</span>

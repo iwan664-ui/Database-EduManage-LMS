@@ -28,7 +28,7 @@ export function StudentSmartCard({ student, enrolledClassesCount, kkmAvg }: Stud
 
   // Generate deterministic NISN from student name
   const nisn = '00' + Math.abs(student.siswa.split('').reduce((acc, c) => acc + c.charCodeAt(0), 10000000)).toString().slice(0, 8);
-  const studentId = 'AW29-' + nisn.slice(-4);
+  const studentId = 'AW3-' + nisn.slice(-4);
   const academicYear = '2026/2027';
 
   const handlePrint = () => {
@@ -50,7 +50,7 @@ export function StudentSmartCard({ student, enrolledClassesCount, kkmAvg }: Stud
             </h3>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Kartu identitas resmi AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK berstandar NFC & QR Code.
+            Kartu identitas resmi AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY berstandar NFC & QR Code.
           </p>
         </div>
 
@@ -99,10 +99,10 @@ export function StudentSmartCard({ student, enrolledClassesCount, kkmAvg }: Stud
                   />
                   <div>
                     <div className="text-[11px] font-black tracking-wider text-orange-400 uppercase leading-none">
-                      AL-WILDAN ISLAMIC SCHOOL 29
+                      AL-WILDAN ISLAMIC SCHOOL 3
                     </div>
                     <div className="text-[10px] text-emerald-300 font-semibold tracking-wide">
-                      KOTA DEPOK · JAWA BARAT
+                      BSD CITY · TANGERANG SELATAN
                     </div>
                     <div className="text-[8px] text-blue-200 tracking-tight">
                       International Islamic Education
@@ -179,22 +179,22 @@ export function StudentSmartCard({ student, enrolledClassesCount, kkmAvg }: Stud
                   <span className="text-[10px] font-black uppercase text-blue-900 tracking-wider">
                     Ketentuan & Tata Tertib Santri
                   </span>
-                  <span className="text-[9px] font-mono font-bold text-slate-500">AL-WILDAN 29</span>
+                  <span className="text-[9px] font-mono font-bold text-slate-500">AL-WILDAN 3 BSD CITY</span>
                 </div>
 
                 <ol className="text-[9px] text-slate-600 space-y-1 list-decimal list-inside leading-tight font-medium">
-                  <li>Kartu ini adalah identitas resmi santri AL-WILDAN 29 Kota Depok.</li>
+                  <li>Kartu ini adalah identitas resmi santri AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY.</li>
                   <li>Wajib dibawa saat KBM, halaqah Tahfidz, dan kegiatan asrama/kampus.</li>
                   <li>Wajib menjaga akhlaqul karimah, adab thalabul ilmi, dan shalat 5 waktu.</li>
-                  <li>Jika menemukan kartu ini, mohon kembalikan ke Bagian Kesiswaan Al-Wildan.</li>
+                  <li>Jika menemukan kartu ini, mohon kembalikan ke Bagian Kesiswaan Al-Wildan 3 BSD City.</li>
                 </ol>
               </div>
 
               <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                 <div>
-                  <div className="text-[9px] font-bold text-slate-900">Kampus GDC Depok</div>
-                  <div className="text-[8px] text-slate-500">Jl. Grand Depok City, Sektor Melati, Depok</div>
-                  <div className="text-[8px] text-blue-600 font-bold mt-0.5">www.alwildan29.sch.id</div>
+                  <div className="text-[9px] font-bold text-slate-900">Kampus Utama BSD City</div>
+                  <div className="text-[8px] text-slate-500">BSD City, Tangerang Selatan, Banten</div>
+                  <div className="text-[8px] text-blue-600 font-bold mt-0.5">www.alwildan3bsd.sch.id</div>
                 </div>
 
                 {/* QR Code Verification */}

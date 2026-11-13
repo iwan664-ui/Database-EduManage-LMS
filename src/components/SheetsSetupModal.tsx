@@ -307,12 +307,12 @@ function initializeDatabaseSheets(ss) {
           <div className="flex items-center gap-3">
             <img
               src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
-              alt="Logo AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK"
+              alt="Logo AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY"
               className="w-10 h-10 object-contain rounded-full bg-white p-0.5 border border-slate-200 shrink-0"
             />
             <div>
               <h3 className="text-base font-bold text-slate-900">Integrasi Google Sheets</h3>
-              <p className="text-xs text-slate-500">AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK · Apps Script Web App</p>
+              <p className="text-xs text-slate-500">AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY · Apps Script Web App</p>
             </div>
           </div>
           <button

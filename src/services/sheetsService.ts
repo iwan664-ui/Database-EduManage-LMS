@@ -1,5 +1,6 @@
 import { DatabaseState, LogAbsensi, LogNilai } from '../types';
 import { initialData } from '../data/initialData';
+import { SecurityService } from './securityService';
 
 const STORAGE_KEY_DB = 'edumanage_lms_db';
 const STORAGE_KEY_GAS_URL = 'edumanage_gas_url';
@@ -106,10 +107,10 @@ export class SheetsService {
     }
 
     try {
-      // Coba lewat proxy server terlebih dahulu
       const proxyResp = await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({ url: targetUrl, action: 'ping' }),
       });
 
@@ -152,7 +153,8 @@ export class SheetsService {
     try {
       const resp = await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({ url: targetUrl, action: 'getInitData' }),
       });
 
@@ -204,7 +206,8 @@ export class SheetsService {
     try {
       const resp = await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({ url: targetUrl, action: 'setupSheets', payload: {} }),
       });
 
@@ -229,12 +232,15 @@ export class SheetsService {
 
     const fullAbsensi: LogAbsensi[] = absensiItems.map((item) => ({
       ...item,
+      materi_diajarkan: item.materi_diajarkan ? SecurityService.sanitizeText(item.materi_diajarkan, 200) : item.materi_diajarkan,
       id_absensi: item.id_absensi || `ABS_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: now,
     }));
 
     const fullNilai: LogNilai[] = nilaiItems.map((item) => ({
       ...item,
+      materi_diajarkan: item.materi_diajarkan ? SecurityService.sanitizeText(item.materi_diajarkan, 200) : item.materi_diajarkan,
+      catatan: item.catatan ? SecurityService.sanitizeText(item.catatan, 240) : item.catatan,
       id_nilai: item.id_nilai || `NIL_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
       timestamp: now,
     }));
@@ -256,7 +262,8 @@ export class SheetsService {
     try {
       const resp = await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({
           url: targetUrl,
           action: 'submitBatchBoth',
@@ -301,7 +308,8 @@ export class SheetsService {
     try {
       await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({
           url: targetUrl,
           action: 'updateAbsensi',
@@ -328,7 +336,8 @@ export class SheetsService {
     try {
       await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({
           url: targetUrl,
           action: 'deleteAbsensi',
@@ -355,7 +364,8 @@ export class SheetsService {
     try {
       await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({
           url: targetUrl,
           action: 'updateNilai',
@@ -382,7 +392,8 @@ export class SheetsService {
     try {
       await fetch('/api/sheets-proxy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: SecurityService.getAuthHeaders(),
+        credentials: 'same-origin',
         body: JSON.stringify({
           url: targetUrl,
           action: 'deleteNilai',

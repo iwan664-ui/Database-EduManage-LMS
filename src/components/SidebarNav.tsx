@@ -60,6 +60,7 @@ interface SidebarNavProps {
   onOpenScanner: () => void;
   onOpenSecurity: () => void;
   onOpenSheets: () => void;
+  onLockScreen: () => void;
   onLogout: () => void;
   hasBiometric: boolean;
   hasSheetsUrl: boolean;
@@ -79,6 +80,7 @@ export function SidebarNav({
   onOpenScanner,
   onOpenSecurity,
   onOpenSheets,
+  onLockScreen,
   onLogout,
   hasBiometric,
   hasSheetsUrl,
@@ -407,35 +409,37 @@ export function SidebarNav({
               </div>
             ))}
 
-          {/* Utility & System Tools Group (Always accessible on the left) */}
-          <div className="pt-2 border-t border-slate-200/80">
-            {!collapsed && (
-              <div className="px-2.5 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
-                Alat & Pengaturan Sistem
-              </div>
-            )}
-            <div className="space-y-1">
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenScanner();
-                  onCloseMobile();
-                }}
-                title="Scanner Presensi QR & Barcode"
-                className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all gap-2.5 cursor-pointer`}
-              >
-                <QrCode className="w-4 h-4 text-blue-600 shrink-0" />
-                {!collapsed && <span className="truncate">Scan Presensi QR</span>}
-              </button>
+          {/* Utility & System Tools Group (RBAC-Protected on the Left) */}
+          {currentUser && (
+            <div className="pt-2 border-t border-slate-200/80">
+              {!collapsed && (
+                <div className="px-2.5 pb-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">
+                  Alat & Keamanan Sistem
+                </div>
+              )}
+              <div className="space-y-1">
+                {(currentUser.role === 'tutor' || currentUser.role === 'admin') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenScanner();
+                      onCloseMobile();
+                    }}
+                    title="Scanner Presensi QR & Barcode"
+                    className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-all gap-2.5 cursor-pointer`}
+                  >
+                    <QrCode className="w-4 h-4 text-blue-600 shrink-0" />
+                    {!collapsed && <span className="truncate">Scan Presensi QR</span>}
+                  </button>
+                )}
 
-              {currentUser && (
                 <button
                   type="button"
                   onClick={() => {
                     onOpenSecurity();
                     onCloseMobile();
                   }}
-                  title="Pusat Keamanan & Biometrik WebAuthn"
+                  title="Pusat Keamanan, PIN & Biometrik WebAuthn"
                   className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold transition-all gap-2.5 cursor-pointer ${
                     hasBiometric
                       ? 'text-blue-800 bg-blue-50/70 hover:bg-blue-100'
@@ -445,34 +449,49 @@ export function SidebarNav({
                   <Fingerprint className={`w-4 h-4 shrink-0 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
                   {!collapsed && (
                     <span className="truncate">
-                      {hasBiometric ? 'Biometrik Aktif' : 'Keamanan & Biometrik'}
+                      {hasBiometric ? 'Keamanan & Biometrik' : 'Pusat Keamanan'}
                     </span>
                   )}
                 </button>
-              )}
 
-              <button
-                type="button"
-                onClick={() => {
-                  onOpenSheets();
-                  onCloseMobile();
-                }}
-                title="Pengaturan Google Sheets"
-                className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold transition-all gap-2.5 cursor-pointer ${
-                  hasSheetsUrl
-                    ? 'text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <FileSpreadsheet className={`w-4 h-4 shrink-0 ${hasSheetsUrl ? 'text-emerald-600' : 'text-slate-500'}`} />
-                {!collapsed && (
-                  <span className="truncate">
-                    {hasSheetsUrl ? 'Google Sheets (Aktif)' : 'Setup Google Sheets'}
-                  </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onLockScreen();
+                    onCloseMobile();
+                  }}
+                  title="Kunci Layar Portal Sekarang"
+                  className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold text-amber-800 bg-amber-50/60 hover:bg-amber-100 transition-all gap-2.5 cursor-pointer`}
+                >
+                  <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+                  {!collapsed && <span className="truncate">Kunci Layar</span>}
+                </button>
+
+                {currentUser.role === 'admin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onOpenSheets();
+                      onCloseMobile();
+                    }}
+                    title="Pengaturan Google Sheets (Khusus Admin)"
+                    className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'px-3'} py-2.5 rounded-xl text-xs font-bold transition-all gap-2.5 cursor-pointer ${
+                      hasSheetsUrl
+                        ? 'text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <FileSpreadsheet className={`w-4 h-4 shrink-0 ${hasSheetsUrl ? 'text-emerald-600' : 'text-slate-500'}`} />
+                    {!collapsed && (
+                      <span className="truncate">
+                        {hasSheetsUrl ? 'Google Sheets (Aktif)' : 'Setup Google Sheets'}
+                      </span>
+                    )}
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Bottom Logout Footer */}

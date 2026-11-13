@@ -374,7 +374,7 @@ export interface GateAttendanceLog {
   siswa: string;
   cabang: string;
   kelas?: string;
-  kode_kartu: string; // e.g. AW29-1234
+  kode_kartu: string; // e.g. AW3-1234
   jam_masuk?: string; // HH:mm:ss
   jam_pulang?: string; // HH:mm:ss
   status_masuk?: GateScanInStatus;

@@ -110,8 +110,8 @@ export function StudentPortal({
   const studentInfo = useMemo(() => {
     return database.master_siswa.find((s) => s.siswa === selectedStudentName) || {
       siswa: selectedStudentName,
-      cabang: 'Kampus GDC Depok',
-      email_siswa: currentUser.email || 'siswa@alwildan29.sch.id',
+      cabang: 'Kampus Utama BSD City',
+      email_siswa: currentUser.email || 'siswa@alwildan3bsd.sch.id',
     };
   }, [database.master_siswa, selectedStudentName]);
 
@@ -484,7 +484,7 @@ export function StudentPortal({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK · {studentInfo.email_siswa} · {studentInfo.cabang}
+                AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY · {studentInfo.email_siswa} · {studentInfo.cabang}
               </p>
             </div>
           </div>
@@ -1168,7 +1168,7 @@ export function StudentPortal({
                   <strong className="text-slate-800">
                     {radarData.axes.slice().sort((a, b) => b.score - a.score)[1]?.label}
                   </strong>
-                  . Sinergi antara kurikulum akademik KKM 85 dan pembiasaan adab harian Al-Wildan 29 Depok telah tercermin dalam kedisiplinan belajar santri.
+                  . Sinergi antara kurikulum akademik KKM 85 dan pembiasaan adab harian AL-WILDAN 3 BSD CITY telah tercermin dalam kedisiplinan belajar santri.
                 </p>
               </div>
             </div>
@@ -1546,7 +1546,7 @@ export function StudentPortal({
                   Daftar Ekstrakurikuler yang Diikuti
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Informasi kegiatan bakat, minat, olahraga sunnah, kepemimpinan, dan tahfidz siswa di AL-WILDAN 29.
+                  Informasi kegiatan bakat, minat, olahraga sunnah, kepemimpinan, dan tahfidz siswa di AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY.
                 </p>
               </div>
 

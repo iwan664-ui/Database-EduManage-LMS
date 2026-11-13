@@ -403,7 +403,7 @@ export function AttendanceScannerModal({
                     <Scan className="w-4 h-4 animate-pulse" />
                     SENSOR BARCODE & QR SIAP PINDAI
                   </span>
-                  <span className="text-slate-400">Contoh ID: AW29-xxxx</span>
+                  <span className="text-slate-400">Contoh ID: AW3-xxxx</span>
                 </div>
                 <div className="flex gap-2">
                   <input
@@ -411,7 +411,7 @@ export function AttendanceScannerModal({
                     type="text"
                     value={barcodeInput}
                     onChange={(e) => setBarcodeInput(e.target.value)}
-                    placeholder="Arahkan scanner barcode kartu santri atau ketik kode AW29-..."
+                    placeholder="Arahkan scanner barcode kartu santri atau ketik kode AW3-..."
                     className="flex-1 text-xs font-mono font-bold rounded-xl border border-slate-700 bg-slate-900 text-white px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   <button
@@ -492,7 +492,7 @@ export function AttendanceScannerModal({
                 type="text"
                 value={searchStudent}
                 onChange={(e) => setSearchStudent(e.target.value)}
-                placeholder="Cari nama santri, kampus, atau kode AW29-..."
+                placeholder="Cari nama santri, kampus, atau kode AW3-..."
                 className="w-full text-xs font-semibold rounded-xl border border-slate-300 pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"
               />
             </div>

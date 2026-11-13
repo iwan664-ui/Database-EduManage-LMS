@@ -133,7 +133,7 @@ export const cbtExamPackages: CbtExamPackage[] = [
       },
       {
         id: 4,
-        pertanyaan: 'The Arabic and English immersion program at AL-WILDAN 29 is renowned for _______ exceptional disciplinary standards.',
+        pertanyaan: 'The Arabic and English immersion program at AL-WILDAN 3 BSD CITY is renowned for _______ exceptional disciplinary standards.',
         pilihan: ['it\'s', 'its', 'their', 'theirs'],
         kunci: 1,
         pembahasan: '"its" is the possessive pronoun for the singular institution/program.',

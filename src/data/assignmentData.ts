@@ -72,7 +72,7 @@ export const initialPengumpulanList: PengumpulanTugas[] = [
     siswa: 'Ahmad Rizky Pratama',
     tanggal_kumpul: '2026-11-05 19:15',
     teks_jawaban: 'Berikut rekaman setoran audio ziyadah Surah An-Naba ayat 1-25. Durasi 4 menit 12 detik dengan tempo tartil.',
-    link_lampiran: 'https://storage.alwildan29.sch.id/ahmad-an-naba.mp3',
+    link_lampiran: 'https://storage.alwildan3bsd.sch.id/ahmad-an-naba.mp3',
     status: 'Sudah Dinilai',
     nilai: 95,
     catatan_guru: 'Tartil sangat memuaskan, ghunnah jelas, mad thabi\'i konsisten 2 harakat. Pertahankan!',

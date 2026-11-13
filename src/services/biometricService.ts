@@ -14,7 +14,7 @@ export interface BiometricCredential {
 }
 
 const STORAGE_KEY_BIOMETRICS = 'edumanage_biometric_credentials';
-const RP_NAME = 'AL-WILDAN 29 KOTA DEPOK LMS';
+const RP_NAME = 'AL-WILDAN 3 BSD CITY LMS';
 
 // Helper buffer conversion
 function bufferToBase64Url(buffer: ArrayBuffer): string {
@@ -194,6 +194,7 @@ export class BiometricService {
   static async authenticateBiometric(targetUser?: { name: string; role: string }): Promise<{
     success: boolean;
     message: string;
+    credentialId?: string;
     user?: { name: string; role: string };
   }> {
     const creds = this.getStoredCredentials();
@@ -256,6 +257,7 @@ export class BiometricService {
       return {
         success: true,
         message: `Verifikasi biometrik berhasil. Selamat datang, ${matched.userName}!`,
+        credentialId: matched.credentialId,
         user: { name: matched.userName, role: matched.role },
       };
     } catch (err: any) {

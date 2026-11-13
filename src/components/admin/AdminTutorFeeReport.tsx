@@ -118,7 +118,7 @@ export function AdminTutorFeeReport({ database }: AdminTutorFeeReportProps) {
               Rekapitulasi Kehadiran & Honor Fee Tutor
             </h2>
             <p className="text-xs text-slate-500">
-              AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK · Perhitungan otomatis total jam/pertemuan mengajar berdasarkan log absensi untuk pencairan honor pengajar.
+              AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY · Perhitungan otomatis total jam/pertemuan mengajar berdasarkan log absensi untuk pencairan honor pengajar.
             </p>
           </div>
 

@@ -89,9 +89,9 @@ export function StudentGateAttendanceView({ studentName, cabang }: StudentGateAt
   const buildShareText = (log?: GateAttendanceLog) => {
     const target = log || todayLog;
     if (!target) {
-      return `*INFO KEHADIRAN GERBANG SANTRI — AL-WILDAN 29 DEPOK*\nAnanda *${studentName}* (${cardCode}) belum tercatat melakukan scan gerbang pada tanggal ${todayStr}.`;
+      return `*INFO KEHADIRAN GERBANG SANTRI — AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY*\nAnanda *${studentName}* (${cardCode}) belum tercatat melakukan scan gerbang pada tanggal ${todayStr}.`;
     }
-    return `*INFO KEHADIRAN HARIAN SANTRI — AL-WILDAN 29 DEPOK*
+    return `*INFO KEHADIRAN HARIAN SANTRI — AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY*
 👤 Nama: *${target.siswa}* (${target.kode_kartu})
 📅 Tanggal: ${target.tanggal}
 🟢 Jam Hadir: *${target.jam_masuk || '-'} WIB* (${target.status_masuk || '-'})

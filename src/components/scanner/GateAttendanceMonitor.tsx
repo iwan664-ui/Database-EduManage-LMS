@@ -8,6 +8,7 @@ import {
 } from '../../types';
 import { GateAttendanceService } from '../../services/gateAttendanceService';
 import { PdfExportService } from '../../services/pdfExportService';
+import { SecurityService } from '../../services/securityService';
 import { useToast } from '../Toast';
 import {
   QrCode,
@@ -234,24 +235,35 @@ export function GateAttendanceMonitor({
     const rows = rosterRows.map((r) => [
       selectedDate,
       r.cardCode,
-      `"${r.student.siswa}"`,
-      `"${r.kelas}"`,
-      `"${r.student.cabang}"`,
+      r.student.siswa,
+      r.kelas,
+      r.student.cabang,
       r.log?.jam_masuk || '-',
       r.log?.status_masuk || 'Belum Hadir',
       r.log?.jam_pulang || '-',
       r.log?.status_pulang || 'Belum Hadir',
       GateAttendanceService.computeDuration(r.log?.jam_masuk, r.log?.jam_pulang),
-      `"${r.log?.scan_oleh_masuk || '-'}"`,
-      `"${r.log?.scan_oleh_pulang || '-'}"`,
+      r.log?.scan_oleh_masuk || '-',
+      r.log?.scan_oleh_pulang || '-',
     ]);
-    const csv = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+    const csv =
+      'data:text/csv;charset=utf-8,' +
+      [
+        headers.map(SecurityService.escapeCsvCell).join(','),
+        ...rows.map((row) => row.map(SecurityService.escapeCsvCell).join(',')),
+      ].join('\n');
     const a = document.createElement('a');
     a.href = encodeURI(csv);
     a.download = `Monitoring_Scan_Gerbang_${selectedDate}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    SecurityService.logSecurityEvent({
+      eventType: 'DATA_EXPORTED',
+      userName: currentUser?.name || 'Petugas',
+      role: currentUser?.role || 'tutor',
+      details: `Ekspor CSV scan gerbang tanggal ${selectedDate} (${rows.length} baris).`,
+    });
     showToast('CSV Diunduh', `Data kehadiran gerbang tanggal ${selectedDate} berhasil diunduh.`, 'success');
   };
 
@@ -408,7 +420,7 @@ export function GateAttendanceMonitor({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Nama atau AW29-..."
+                placeholder="Nama atau AW3-..."
                 className="w-full text-xs rounded-xl border border-slate-300 pl-8 pr-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
               />
             </div>

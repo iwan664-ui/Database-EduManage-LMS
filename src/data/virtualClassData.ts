@@ -9,7 +9,7 @@ export const initialVirtualSessions: VirtualSessionItem[] = [
     tanggal: '2026-11-09',
     waktu: '05:30 - 06:45 WIB',
     platform: 'Google Meet',
-    link_meet: 'https://meet.google.com/aw29-thz-live',
+    link_meet: 'https://meet.google.com/aw3-thz-live',
     status: 'Sedang Berlangsung',
     deskripsi: 'Sesi live talaqqi bersama seluruh santri halaqah tahfidz, evaluasi makhraj huruf dan kelancaran hafalan.',
     topik_bahasan: [
@@ -26,7 +26,7 @@ export const initialVirtualSessions: VirtualSessionItem[] = [
     tanggal: '2026-11-09',
     waktu: '16:00 - 17:30 WIB',
     platform: 'Google Meet',
-    link_meet: 'https://meet.google.com/aw29-mat-saintek',
+    link_meet: 'https://meet.google.com/aw3-mat-saintek',
     status: 'Akan Datang',
     deskripsi: 'Bedah soal bertaraf Higher Order Thinking Skills (HOTS) persiapan asesmen semester dan standar ketuntasan nilai 85.',
     topik_bahasan: [

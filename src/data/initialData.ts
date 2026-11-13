@@ -10,27 +10,27 @@ export const initialData: DatabaseState = {
   ],
 
   master_siswa: [
-    { cabang: 'Kampus 1 GDC Depok', siswa: 'Ahmad Rizky Pratama', email_siswa: 'ahmad.rizky@gmail.com' },
-    { cabang: 'Kampus 1 GDC Depok', siswa: 'Bella Safitri', email_siswa: 'bella.safitri@gmail.com' },
-    { cabang: 'Kampus 1 GDC Depok', siswa: 'Dimas Aditya', email_siswa: 'dimas.aditya@gmail.com' },
-    { cabang: 'Kampus 1 GDC Depok', siswa: 'Eka Nurul Fadilah', email_siswa: 'eka.fadilah@gmail.com' },
-    { cabang: 'Kampus 1 GDC Depok', siswa: 'Farhan Maulana', email_siswa: 'farhan.m@gmail.com' },
-    { cabang: 'Kampus 2 Cinere Depok', siswa: 'Gilang Ramadhan', email_siswa: 'gilang.r@gmail.com' },
-    { cabang: 'Kampus 2 Cinere Depok', siswa: 'Hana Clarissa', email_siswa: 'hana.clarissa@gmail.com' },
-    { cabang: 'Kampus 2 Cinere Depok', siswa: 'Indra Gunawan', email_siswa: 'indra.g@gmail.com' },
-    { cabang: 'Kampus 2 Cinere Depok', siswa: 'Jessica Aurelia', email_siswa: 'jessica.a@gmail.com' },
-    { cabang: 'Kampus 2 Cinere Depok', siswa: 'Kevin Sanjaya', email_siswa: 'kevin.s@gmail.com' },
-    { cabang: 'Kampus 3 Sawangan Depok', siswa: 'Laras Wulandari', email_siswa: 'laras.w@gmail.com' },
-    { cabang: 'Kampus 3 Sawangan Depok', siswa: 'Muhammad Alif', email_siswa: 'm.alif@gmail.com' },
-    { cabang: 'Kampus 3 Sawangan Depok', siswa: 'Nadya Putri', email_siswa: 'nadya.p@gmail.com' },
-    { cabang: 'Kampus 3 Sawangan Depok', siswa: 'Oki Setiawan', email_siswa: 'oki.setiawan@gmail.com' },
-    { cabang: 'Kampus 3 Sawangan Depok', siswa: 'Putri Amelia', email_siswa: 'putri.amelia@gmail.com' },
+    { cabang: 'Kampus Utama BSD City', siswa: 'Ahmad Rizky Pratama', email_siswa: 'ahmad.rizky@gmail.com' },
+    { cabang: 'Kampus Utama BSD City', siswa: 'Bella Safitri', email_siswa: 'bella.safitri@gmail.com' },
+    { cabang: 'Kampus Utama BSD City', siswa: 'Dimas Aditya', email_siswa: 'dimas.aditya@gmail.com' },
+    { cabang: 'Kampus Utama BSD City', siswa: 'Eka Nurul Fadilah', email_siswa: 'eka.fadilah@gmail.com' },
+    { cabang: 'Kampus Utama BSD City', siswa: 'Farhan Maulana', email_siswa: 'farhan.m@gmail.com' },
+    { cabang: 'Kampus Sains BSD City', siswa: 'Gilang Ramadhan', email_siswa: 'gilang.r@gmail.com' },
+    { cabang: 'Kampus Sains BSD City', siswa: 'Hana Clarissa', email_siswa: 'hana.clarissa@gmail.com' },
+    { cabang: 'Kampus Sains BSD City', siswa: 'Indra Gunawan', email_siswa: 'indra.g@gmail.com' },
+    { cabang: 'Kampus Sains BSD City', siswa: 'Jessica Aurelia', email_siswa: 'jessica.a@gmail.com' },
+    { cabang: 'Kampus Sains BSD City', siswa: 'Kevin Sanjaya', email_siswa: 'kevin.s@gmail.com' },
+    { cabang: 'Kampus Tahfidz BSD City', siswa: 'Laras Wulandari', email_siswa: 'laras.w@gmail.com' },
+    { cabang: 'Kampus Tahfidz BSD City', siswa: 'Muhammad Alif', email_siswa: 'm.alif@gmail.com' },
+    { cabang: 'Kampus Tahfidz BSD City', siswa: 'Nadya Putri', email_siswa: 'nadya.p@gmail.com' },
+    { cabang: 'Kampus Tahfidz BSD City', siswa: 'Oki Setiawan', email_siswa: 'oki.setiawan@gmail.com' },
+    { cabang: 'Kampus Tahfidz BSD City', siswa: 'Putri Amelia', email_siswa: 'putri.amelia@gmail.com' },
   ],
 
   master_kelas: [
     {
       id_kelas: 'KLS-10A-MAT',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
       kelas: '10 SMA Unggulan A',
       mapel: 'Matematika Wajib',
       hari: 'Senin',
@@ -39,7 +39,7 @@ export const initialData: DatabaseState = {
     },
     {
       id_kelas: 'KLS-11A-FIS',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
       kelas: '11 SMA Saintek A',
       mapel: 'Fisika Intensif',
       hari: 'Rabu',
@@ -48,7 +48,7 @@ export const initialData: DatabaseState = {
     },
     {
       id_kelas: 'KLS-12B-KIM',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
       kelas: '12 SMA Persiapan UTBK',
       mapel: 'Kimia UTBK',
       hari: 'Selasa',
@@ -57,7 +57,7 @@ export const initialData: DatabaseState = {
     },
     {
       id_kelas: 'KLS-10B-INF',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
       kelas: '10 SMA Coding & Digital',
       mapel: 'Informatika & Pemrograman',
       hari: 'Kamis',
@@ -66,7 +66,7 @@ export const initialData: DatabaseState = {
     },
     {
       id_kelas: 'KLS-12A-ENG',
-      cabang: 'Kampus 3 Sawangan Depok',
+      cabang: 'Kampus Tahfidz BSD City',
       kelas: '12 SMA International Prep',
       mapel: 'Bahasa Inggris & TOEFL',
       hari: 'Jumat',
@@ -75,7 +75,7 @@ export const initialData: DatabaseState = {
     },
     {
       id_kelas: 'KLS-11B-BIO',
-      cabang: 'Kampus 3 Sawangan Depok',
+      cabang: 'Kampus Tahfidz BSD City',
       kelas: '11 SMA Kedokteran Prep',
       mapel: 'Biologi Kedokteran',
       hari: 'Sabtu',
@@ -95,7 +95,7 @@ export const initialData: DatabaseState = {
       hari: 'Senin',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
     {
       id_kelas: 'KLS-10A-MAT',
@@ -106,7 +106,7 @@ export const initialData: DatabaseState = {
       hari: 'Senin',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
     {
       id_kelas: 'KLS-10A-MAT',
@@ -117,7 +117,7 @@ export const initialData: DatabaseState = {
       hari: 'Senin',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
     {
       id_kelas: 'KLS-10A-MAT',
@@ -128,7 +128,7 @@ export const initialData: DatabaseState = {
       hari: 'Senin',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
     {
       id_kelas: 'KLS-10A-MAT',
@@ -139,7 +139,7 @@ export const initialData: DatabaseState = {
       hari: 'Senin',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
 
     // Kelas KLS-11A-FIS (Budi Santoso)
@@ -152,7 +152,7 @@ export const initialData: DatabaseState = {
       hari: 'Rabu',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
     {
       id_kelas: 'KLS-11A-FIS',
@@ -163,7 +163,7 @@ export const initialData: DatabaseState = {
       hari: 'Rabu',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
     {
       id_kelas: 'KLS-11A-FIS',
@@ -174,7 +174,7 @@ export const initialData: DatabaseState = {
       hari: 'Rabu',
       waktu: '16:00 - 17:30',
       guru: 'Budi Santoso, S.Pd.',
-      cabang: 'Kampus 1 GDC Depok',
+      cabang: 'Kampus Utama BSD City',
     },
 
     // Kelas KLS-12B-KIM (Siti Aminah)
@@ -187,7 +187,7 @@ export const initialData: DatabaseState = {
       hari: 'Selasa',
       waktu: '17:45 - 19:15',
       guru: 'Siti Aminah, M.Si.',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
     },
     {
       id_kelas: 'KLS-12B-KIM',
@@ -198,7 +198,7 @@ export const initialData: DatabaseState = {
       hari: 'Selasa',
       waktu: '17:45 - 19:15',
       guru: 'Siti Aminah, M.Si.',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
     },
     {
       id_kelas: 'KLS-12B-KIM',
@@ -209,7 +209,7 @@ export const initialData: DatabaseState = {
       hari: 'Selasa',
       waktu: '17:45 - 19:15',
       guru: 'Siti Aminah, M.Si.',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
     },
     {
       id_kelas: 'KLS-12B-KIM',
@@ -220,7 +220,7 @@ export const initialData: DatabaseState = {
       hari: 'Selasa',
       waktu: '17:45 - 19:15',
       guru: 'Siti Aminah, M.Si.',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
     },
 
     // Kelas KLS-10B-INF (Rian Pratama)
@@ -233,7 +233,7 @@ export const initialData: DatabaseState = {
       hari: 'Kamis',
       waktu: '16:00 - 17:30',
       guru: 'Rian Pratama, S.Kom.',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
     },
     {
       id_kelas: 'KLS-10B-INF',
@@ -244,7 +244,7 @@ export const initialData: DatabaseState = {
       hari: 'Kamis',
       waktu: '16:00 - 17:30',
       guru: 'Rian Pratama, S.Kom.',
-      cabang: 'Kampus 2 Cinere Depok',
+      cabang: 'Kampus Sains BSD City',
     },
 
     // Kelas KLS-12A-ENG (Dewi Lestari)
@@ -257,7 +257,7 @@ export const initialData: DatabaseState = {
       hari: 'Jumat',
       waktu: '15:30 - 17:00',
       guru: 'Dewi Lestari, S.Pd.',
-      cabang: 'Kampus 3 Sawangan Depok',
+      cabang: 'Kampus Tahfidz BSD City',
     },
     {
       id_kelas: 'KLS-12A-ENG',
@@ -268,7 +268,7 @@ export const initialData: DatabaseState = {
       hari: 'Jumat',
       waktu: '15:30 - 17:00',
       guru: 'Dewi Lestari, S.Pd.',
-      cabang: 'Kampus 3 Sawangan Depok',
+      cabang: 'Kampus Tahfidz BSD City',
     },
     {
       id_kelas: 'KLS-12A-ENG',
@@ -279,7 +279,7 @@ export const initialData: DatabaseState = {
       hari: 'Jumat',
       waktu: '15:30 - 17:00',
       guru: 'Dewi Lestari, S.Pd.',
-      cabang: 'Kampus 3 Sawangan Depok',
+      cabang: 'Kampus Tahfidz BSD City',
     },
     {
       id_kelas: 'KLS-12A-ENG',
@@ -290,7 +290,7 @@ export const initialData: DatabaseState = {
       hari: 'Jumat',
       waktu: '15:30 - 17:00',
       guru: 'Dewi Lestari, S.Pd.',
-      cabang: 'Kampus 3 Sawangan Depok',
+      cabang: 'Kampus Tahfidz BSD City',
     },
   ],
 
@@ -637,7 +637,7 @@ export const initialData: DatabaseState = {
     },
   ],
 
-  // DATA EKSTRAKURIKULER AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK
+  // DATA EKSTRAKURIKULER AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
   ekstrakurikuler: [
     // Ahmad Rizky Pratama
     {
@@ -647,7 +647,7 @@ export const initialData: DatabaseState = {
       kategori: 'Keagamaan & Tahfidz',
       pembina: 'Ustadz Farhan Al-Hafidz',
       jadwal: 'Sabtu, 07:30 - 09:30 WIB',
-      lokasi: 'Masjid Kampus Utama GDC',
+      lokasi: 'Masjid Kampus Utama BSD City',
       kehadiran_persen: 96,
       predikat: 'A (Istimewa)',
       capaian: 'Telah mutqin Juz 29 dan sedang melanjutkan hafalan Juz 28 dengan tajwid makharijul huruf yang fasih.',
@@ -673,7 +673,7 @@ export const initialData: DatabaseState = {
       kategori: 'Olahraga Sunnah',
       pembina: 'Coach Ridwan An-Nabil',
       jadwal: 'Ahad, 08:00 - 10:00 WIB',
-      lokasi: 'Lapangan Panahan Al-Wildan 29',
+      lokasi: 'Lapangan Panahan Al-Wildan 3 BSD City',
       kehadiran_persen: 89,
       predikat: 'B (Sangat Baik)',
       capaian: 'Menguasai teknik jemparingan tradisi dan akurasi tembakan target sasaran jarak 15 meter.',
@@ -691,7 +691,7 @@ export const initialData: DatabaseState = {
       lokasi: 'Galeri Seni Rupa Islam',
       kehadiran_persen: 95,
       predikat: 'A (Istimewa)',
-      capaian: 'Karya lukisan kaligrafi Asmaul Husna terpilih untuk dipamerkan pada Festival Budaya Islam Depok.',
+      capaian: 'Karya lukisan kaligrafi Asmaul Husna terpilih untuk dipamerkan pada Festival Budaya Islam Tangerang Selatan.',
       status: 'Aktif',
     },
     {
@@ -716,10 +716,10 @@ export const initialData: DatabaseState = {
       kategori: 'Olahraga Sunnah',
       pembina: 'Coach Heru Prasetyo',
       jadwal: 'Jumat, 16:00 - 18:00 WIB',
-      lokasi: 'Sport Hall Al-Wildan Depok',
+      lokasi: 'Sport Hall Al-Wildan 3 BSD City',
       kehadiran_persen: 88,
       predikat: 'B (Sangat Baik)',
-      capaian: 'Menjadi pemain anchor inti pada turnamen persahabatan antar SMA Kota Depok.',
+      capaian: 'Menjadi pemain anchor inti pada turnamen persahabatan antar SMA Tangerang Selatan.',
       status: 'Aktif',
     },
     {
@@ -729,7 +729,7 @@ export const initialData: DatabaseState = {
       kategori: 'Kepemimpinan',
       pembina: 'Kak Budi Santoso, S.Pd.',
       jadwal: 'Sabtu, 10:00 - 12:00 WIB',
-      lokasi: 'Lapangan Upacara Kampus GDC',
+      lokasi: 'Lapangan Upacara Kampus BSD City',
       kehadiran_persen: 93,
       predikat: 'A (Istimewa)',
       capaian: 'Menjabat sebagai Pratama Pemimpin Regu Rajawali dan menguasai navigasi darat kompas serta semapur.',
@@ -785,7 +785,7 @@ export const initialData: DatabaseState = {
       kategori: 'Olahraga Sunnah',
       pembina: 'Coach Ridwan An-Nabil',
       jadwal: 'Ahad, 08:00 - 10:00 WIB',
-      lokasi: 'Lapangan Panahan Al-Wildan 29',
+      lokasi: 'Lapangan Panahan Al-Wildan 3 BSD City',
       kehadiran_persen: 87,
       predikat: 'B (Sangat Baik)',
       capaian: 'Peningkatan konsistensi tarikan dan bidikan akurat pada bantalan target 20 meter.',
@@ -813,7 +813,7 @@ export const initialData: DatabaseState = {
       kategori: 'Keagamaan & Tahfidz',
       pembina: 'Ustadz Farhan Al-Hafidz',
       jadwal: 'Sabtu, 07:30 - 09:30 WIB',
-      lokasi: 'Masjid Kampus Cinere',
+      lokasi: 'Masjid Kampus Tahfidz BSD City',
       kehadiran_persen: 91,
       predikat: 'A (Istimewa)',
       capaian: 'Mutqin Surat Al-Mulk dan Ar-Rahman dengan makhorijul huruf tartil.',
@@ -856,7 +856,7 @@ export const initialData: DatabaseState = {
       kategori: 'Olahraga Sunnah',
       pembina: 'Coach Heru Prasetyo',
       jadwal: 'Jumat, 16:00 - 18:00 WIB',
-      lokasi: 'Sport Hall Al-Wildan Depok',
+      lokasi: 'Sport Hall Al-Wildan 3 BSD City',
       kehadiran_persen: 89,
       predikat: 'B (Sangat Baik)',
       capaian: 'Pemain sayap dengan kecepatan dan dribble konsisten.',
@@ -901,7 +901,7 @@ export const initialData: DatabaseState = {
       kategori: 'Kepemimpinan',
       pembina: 'Kak Budi Santoso, S.Pd.',
       jadwal: 'Sabtu, 10:00 - 12:00 WIB',
-      lokasi: 'Lapangan Upacara Kampus Sawangan',
+      lokasi: 'Lapangan Upacara Kampus BSD City',
       kehadiran_persen: 96,
       predikat: 'A (Istimewa)',
       capaian: 'Meraih Tanda Kecakapan Khusus (TKK) P3K, Menembak, dan Pengamat Lingkungan.',
@@ -914,7 +914,7 @@ export const initialData: DatabaseState = {
       kategori: 'Olahraga Sunnah',
       pembina: 'Coach Ridwan An-Nabil',
       jadwal: 'Ahad, 08:00 - 10:00 WIB',
-      lokasi: 'Lapangan Panahan Al-Wildan 29',
+      lokasi: 'Lapangan Panahan Al-Wildan 3 BSD City',
       kehadiran_persen: 91,
       predikat: 'A (Istimewa)',
       capaian: 'Akurasi sasaran target jarak 25 meter konsisten di zona kuning/merah.',

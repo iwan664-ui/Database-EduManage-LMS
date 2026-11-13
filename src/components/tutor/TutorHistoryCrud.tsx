@@ -18,6 +18,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { PdfExportService } from '../../services/pdfExportService';
+import { SecurityService } from '../../services/securityService';
 
 interface TutorHistoryCrudProps {
   user: ActiveUser;
@@ -157,11 +158,7 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
   };
 
   const handleExportCsv = () => {
-    const escapeCsv = (val: string | number | undefined | null) => {
-      if (val === null || val === undefined) return '""';
-      const str = String(val).replace(/"/g, '""');
-      return `"${str}"`;
-    };
+    const escapeCsv = SecurityService.escapeCsvCell;
 
     const dateStr = new Date().toISOString().split('T')[0];
     let filename = '';
@@ -224,6 +221,12 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 
+    SecurityService.logSecurityEvent({
+      eventType: 'DATA_EXPORTED',
+      userName: user.name,
+      role: user.role,
+      details: `Ekspor CSV ${activeSubTab} (${rows.length} baris).`,
+    });
     showToast('Export Berhasil!', `File ${filename} (${rows.length} baris) berhasil diunduh.`, 'success');
   };
 

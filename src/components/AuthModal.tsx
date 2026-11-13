@@ -49,6 +49,14 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
   const [hasBiometricEnrolled, setHasBiometricEnrolled] = useState<boolean>(false);
   const [isVerifyingBiometric, setIsVerifyingBiometric] = useState<boolean>(false);
 
+  // 2FA Secondary PIN Challenge State
+  const [pendingPinUser, setPendingPinUser] = useState<{
+    user: ActiveUser;
+    serverToken?: string;
+    serverExpiresAt?: number;
+  } | null>(null);
+  const [pinInput, setPinInput] = useState<string>('');
+
   useEffect(() => {
     if (initialRole) {
       setSelectedRole(initialRole);
@@ -57,6 +65,8 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
       setPassword('');
       setErrorMsg('');
       setShowPassword(false);
+      setPendingPinUser(null);
+      setPinInput('');
     }
   }, [initialRole, isOpen]);
 
@@ -125,35 +135,101 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
 
   if (!isOpen) return null;
 
-  const verifyPasswordOrLock = async (userName: string, role: 'tutor' | 'siswa' | 'admin'): Promise<boolean> => {
+  const authenticateCredentials = async (
+    userName: string,
+    role: 'tutor' | 'siswa' | 'admin'
+  ): Promise<{ ok: boolean; token?: string; expiresAt?: number }> => {
     if (isLocked) {
       setErrorMsg(`Akun terkunci sementara. Harap tunggu ${lockoutTimer} detik.`);
-      return false;
+      return { ok: false };
     }
 
     if (!password) {
       setErrorMsg('Silakan masukkan password terlebih dahulu.');
-      return false;
+      return { ok: false };
     }
 
-    const isValid = await SecurityService.verifyLoginPassword(password);
-    if (!isValid) {
-      const lockStatus = SecurityService.recordFailedAttempt(userName, role);
+    const res = await SecurityService.authenticateWithServer({
+      userName,
+      role,
+      password,
+    });
+
+    if (!res.success) {
+      if (res.locked && res.remainingSeconds) {
+        setIsLocked(true);
+        setLockoutTimer(res.remainingSeconds);
+      }
+      setErrorMsg(res.error || 'Password salah!');
+      return { ok: false };
+    }
+
+    return { ok: true, token: res.token, expiresAt: res.expiresAt };
+  };
+
+  const completeLoginOrRequirePin = async (
+    user: ActiveUser,
+    serverToken?: string,
+    serverExpiresAt?: number
+  ) => {
+    if (SecurityService.hasPersonalPin(user.name, user.role)) {
+      setPendingPinUser({ user, serverToken, serverExpiresAt });
+      setPinInput('');
+      setErrorMsg('');
+      return;
+    }
+
+    await SecurityService.createSecureSession(user, serverToken, serverExpiresAt);
+    onLogin(user);
+  };
+
+  const handlePinChallengeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingPinUser) return;
+    setErrorMsg('');
+
+    if (isLocked) {
+      setErrorMsg(`Akun terkunci sementara. Harap tunggu ${lockoutTimer} detik.`);
+      return;
+    }
+
+    if (!/^\d{6}$/.test(pinInput)) {
+      setErrorMsg('Masukkan PIN Keamanan 6 digit angka.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const validPin = await SecurityService.verifyPersonalPin(
+      pendingPinUser.user.name,
+      pendingPinUser.user.role,
+      pinInput
+    );
+
+    if (!validPin) {
+      const lockStatus = SecurityService.recordFailedAttempt(
+        pendingPinUser.user.name,
+        pendingPinUser.user.role
+      );
       if (lockStatus.locked) {
         setIsLocked(true);
         setLockoutTimer(lockStatus.remainingSeconds);
         setErrorMsg(
-          `Terlalu banyak percobaan gagal! Sistem terkunci selama ${lockStatus.remainingSeconds} detik untuk melindungi data.`
+          `Terlalu banyak percobaan PIN salah! Terkunci selama ${lockStatus.remainingSeconds} detik.`
         );
       } else {
-        setErrorMsg(
-          `Password salah! Tersisa ${lockStatus.remainingAttempts} percobaan sebelum akses dikunci otomatis.`
-        );
+        setErrorMsg(`PIN Keamanan salah! Tersisa ${lockStatus.remainingAttempts} percobaan.`);
       }
-      return false;
+      setIsSubmitting(false);
+      return;
     }
 
-    return true;
+    await SecurityService.createSecureSession(
+      pendingPinUser.user,
+      pendingPinUser.serverToken,
+      pendingPinUser.serverExpiresAt
+    );
+    setIsSubmitting(false);
+    onLogin(pendingPinUser.user);
   };
 
   // Biometric login trigger (Tutors & Admins)
@@ -172,9 +248,10 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
     if (res.success && res.user) {
       showToast('Biometrik Terverifikasi', res.message, 'success');
 
-      await SecurityService.createSecureSession({
-        name: res.user.name,
+      const serverSess = await SecurityService.issueBiometricServerSession({
+        userName: res.user.name,
         role: res.user.role,
+        credentialId: res.credentialId || 'webauthn-verified',
       });
 
       const matchedGuru = database.master_guru.find(
@@ -192,6 +269,7 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
             : undefined,
       };
 
+      await SecurityService.createSecureSession(activeUser, serverSess.token, serverSess.expiresAt);
       onLogin(activeUser);
     } else {
       setErrorMsg(res.message);
@@ -203,15 +281,15 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
     e.preventDefault();
     setErrorMsg('');
 
-    const cleanTutorName = tutorName.trim();
+    const cleanTutorName = SecurityService.sanitizeText(tutorName, 80);
     if (!cleanTutorName) {
       setErrorMsg('Silakan pilih atau masukkan Nama Guru.');
       return;
     }
 
     setIsSubmitting(true);
-    const ok = await verifyPasswordOrLock(cleanTutorName, 'tutor');
-    if (!ok) {
+    const auth = await authenticateCredentials(cleanTutorName, 'tutor');
+    if (!auth.ok) {
       setIsSubmitting(false);
       return;
     }
@@ -226,9 +304,8 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
       id_tutor: matchedGuru ? matchedGuru.id_tutor : 'TUTOR-CUSTOM',
     };
 
-    await SecurityService.createSecureSession(user);
+    await completeLoginOrRequirePin(user, auth.token, auth.expiresAt);
     setIsSubmitting(false);
-    onLogin(user);
   };
 
   const handleSiswaLogin = async (e: React.FormEvent) => {
@@ -242,8 +319,8 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
     }
 
     setIsSubmitting(true);
-    const ok = await verifyPasswordOrLock(matchedSiswa.siswa, 'siswa');
-    if (!ok) {
+    const auth = await authenticateCredentials(matchedSiswa.siswa, 'siswa');
+    if (!auth.ok) {
       setIsSubmitting(false);
       return;
     }
@@ -254,24 +331,23 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
       email: matchedSiswa.email_siswa,
     };
 
-    await SecurityService.createSecureSession(user);
+    await completeLoginOrRequirePin(user, auth.token, auth.expiresAt);
     setIsSubmitting(false);
-    onLogin(user);
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
-    const cleanAdminName = adminName.trim();
-    if (!cleanAdminName) {
-      setErrorMsg('Silakan masukkan Nama Admin.');
+    const cleanAdminName = SecurityService.sanitizeText(adminName, 80);
+    if (!cleanAdminName || cleanAdminName.length < 2) {
+      setErrorMsg('Silakan masukkan Nama Admin yang valid (minimal 2 karakter).');
       return;
     }
 
     setIsSubmitting(true);
-    const ok = await verifyPasswordOrLock(cleanAdminName, 'admin');
-    if (!ok) {
+    const auth = await authenticateCredentials(cleanAdminName, 'admin');
+    if (!auth.ok) {
       setIsSubmitting(false);
       return;
     }
@@ -281,9 +357,8 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
       name: cleanAdminName,
     };
 
-    await SecurityService.createSecureSession(user);
+    await completeLoginOrRequirePin(user, auth.token, auth.expiresAt);
     setIsSubmitting(false);
-    onLogin(user);
   };
 
   const handleRoleSwitch = (role: 'tutor' | 'siswa' | 'admin') => {
@@ -291,6 +366,8 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
     setErrorMsg('');
     setPassword('');
     setShowPassword(false);
+    setPendingPinUser(null);
+    setPinInput('');
   };
 
   return (
@@ -309,20 +386,20 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
           )}
           <img
             src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
-            alt="Logo AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK"
+            alt="Logo AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY"
             className="w-14 h-14 object-contain rounded-full bg-white p-1 shadow-lg mb-2.5 border-2 border-white/60 shrink-0"
           />
           <h2 className="text-base font-extrabold tracking-tight text-white">
-            AL-WILDAN ISLAMIC SCHOOL 29
+            AL-WILDAN ISLAMIC SCHOOL 3
           </h2>
           <p className="text-[11px] text-blue-200 font-medium mt-0.5">
-            KOTA DEPOK · Portal Autentikasi Terenkripsi & LMS
+            BSD CITY · Portal Autentikasi Terenkripsi & LMS
           </p>
 
           {/* Secure Shield Indicator */}
           <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[10px] text-blue-100 font-mono">
             <Lock className="w-3 h-3 text-emerald-400" />
-            <span>Enkripsi SHA-256 & WebAuthn Ready</span>
+            <span>HMAC-SHA256 & WebAuthn Shield v3.0</span>
           </div>
         </div>
 
@@ -388,32 +465,86 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
             </div>
           )}
 
-          {/* Biometric Quick Login Action (Tutors & Admins) */}
-          {(selectedRole === 'tutor' || selectedRole === 'admin') && hasBiometricEnrolled && (
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 space-y-2.5 text-center">
-              <div className="flex items-center justify-center gap-2 text-blue-900 text-xs font-bold">
-                <Fingerprint className="w-4 h-4 text-blue-600" />
-                <span>Biometrik Terdaftar di Perangkat Ini</span>
+          {/* 2FA Secondary Security PIN Challenge */}
+          {pendingPinUser ? (
+            <form onSubmit={handlePinChallengeSubmit} className="space-y-4">
+              <div className="p-4 rounded-2xl bg-blue-50 border border-blue-200 text-xs text-blue-900 space-y-1">
+                <div className="font-extrabold flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-blue-600" />
+                  <span>Verifikasi Lapis Kedua (PIN 6-Digit)</span>
+                </div>
+                <p className="text-[11px] text-blue-800">
+                  Akun <strong>{pendingPinUser.user.name}</strong> mengaktifkan PIN Keamanan tambahan.
+                  Masukkan 6 digit PIN Anda untuk melanjutkan.
+                </p>
               </div>
-              <button
-                type="button"
-                onClick={handleBiometricLogin}
-                disabled={isVerifyingBiometric || isLocked}
-                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
-              >
-                <Fingerprint className="w-4 h-4" />
-                <span>
-                  {isVerifyingBiometric
-                    ? 'Memindai Sensor Biometrik...'
-                    : 'Masuk Cepat dengan Sidik Jari / Face ID'}
-                </span>
-              </button>
-              <div className="text-[10px] text-blue-700/80">Atau masukkan kata sandi di bawah ini</div>
-            </div>
-          )}
 
-          {/* Form Tutor / Guru */}
-          {selectedRole === 'tutor' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  PIN Keamanan Pribadi (6 Digit)
+                </label>
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  placeholder="••••••"
+                  autoFocus
+                  className="w-full text-center tracking-[0.5em] text-sm font-mono font-bold rounded-xl border border-slate-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingPinUser(null);
+                    setPinInput('');
+                    setErrorMsg('');
+                  }}
+                  className="flex-1 py-2.5 px-3 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50 cursor-pointer"
+                >
+                  Kembali
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLocked || isSubmitting}
+                  className="flex-2 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>{isSubmitting ? 'Memverifikasi...' : 'Verifikasi PIN & Masuk'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              {/* Biometric Quick Login Action (Tutors & Admins) */}
+              {(selectedRole === 'tutor' || selectedRole === 'admin') && hasBiometricEnrolled && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/80 space-y-2.5 text-center">
+                  <div className="flex items-center justify-center gap-2 text-blue-900 text-xs font-bold">
+                    <Fingerprint className="w-4 h-4 text-blue-600" />
+                    <span>Biometrik Terdaftar di Perangkat Ini</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleBiometricLogin}
+                    disabled={isVerifyingBiometric || isLocked}
+                    className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
+                  >
+                    <Fingerprint className="w-4 h-4" />
+                    <span>
+                      {isVerifyingBiometric
+                        ? 'Memindai Sensor Biometrik...'
+                        : 'Masuk Cepat dengan Sidik Jari / Face ID'}
+                    </span>
+                  </button>
+                  <div className="text-[10px] text-blue-700/80">Atau masukkan kata sandi di bawah ini</div>
+                </div>
+              )}
+
+              {/* Form Tutor / Guru */}
+              {selectedRole === 'tutor' && (
             <form onSubmit={handleTutorLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
@@ -611,6 +742,8 @@ export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 't
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
+          )}
+            </>
           )}
         </div>
       </div>

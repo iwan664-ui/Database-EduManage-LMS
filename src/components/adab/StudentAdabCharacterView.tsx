@@ -88,7 +88,7 @@ export function StudentAdabCharacterView({
         <div className="space-y-2 text-center md:text-left">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-xs font-bold text-emerald-200">
             <Star className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-            <span>Pusat Karakter & Adab Santri AL-WILDAN 29</span>
+            <span>Pusat Karakter & Adab Santri AL-WILDAN 3 BSD CITY</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white">
             Portofolio Bintang Akhlak & Disiplin

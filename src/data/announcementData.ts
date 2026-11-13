@@ -8,7 +8,7 @@ export const initialAnnouncements: PengumumanItem[] = [
     kategori: 'Penting',
     tanggal: '2026-11-06',
     target: 'Semua',
-    penerbit: 'Bagian Kurikulum AL-WILDAN 29 Kota Depok',
+    penerbit: 'Bagian Kurikulum AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY',
     isPinned: true,
   },
   {
@@ -28,7 +28,7 @@ export const initialAnnouncements: PengumumanItem[] = [
     kategori: 'Akademik',
     tanggal: '2026-11-03',
     target: 'Guru & Tutor',
-    penerbit: 'Kepala Sekolah AL-WILDAN 29 Depok',
+    penerbit: 'Kepala Sekolah AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY',
     isPinned: false,
   },
   {

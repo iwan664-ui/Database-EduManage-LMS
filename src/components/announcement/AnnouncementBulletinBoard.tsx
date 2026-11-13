@@ -86,7 +86,7 @@ export function AnnouncementBulletinBoard({ currentUser }: AnnouncementBulletinB
               Papan Pengumuman & Agenda Lembaga Resmi
             </h2>
             <p className="text-xs text-orange-100 max-w-2xl leading-relaxed">
-              Pusat siaran informasi akademik, jadwal tasmi' tahfidz akbar, pengumuman standar KKM 85, dan agenda kalender AL-WILDAN 29 Depok.
+              Pusat siaran informasi akademik, jadwal tasmi' tahfidz akbar, pengumuman standar KKM 85, dan agenda kalender AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY.
             </p>
           </div>
 
@@ -193,7 +193,7 @@ export function AnnouncementBulletinBoard({ currentUser }: AnnouncementBulletinB
               </div>
 
               <span className="text-[11px] font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Resmi AL-WILDAN 29
+                Resmi AL-WILDAN 3 BSD CITY
               </span>
             </div>
           </div>
