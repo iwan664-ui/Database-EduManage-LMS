@@ -12,6 +12,7 @@ import { VirtualClassroomHub } from '../virtual/VirtualClassroomHub';
 import { AnnouncementBulletinBoard } from '../announcement/AnnouncementBulletinBoard';
 import { StudentWeeklyReportsView } from './StudentWeeklyReportsView';
 import { StudentGateAttendanceView } from './StudentGateAttendanceView';
+import { StudentProgressRadarChart } from './StudentProgressRadarChart';
 import { GateAttendanceService } from '../../services/gateAttendanceService';
 import {
   User,
@@ -144,6 +145,13 @@ export function StudentPortal({
       .filter((ln) => ln.siswa === selectedStudentName)
       .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
   }, [database.log_nilai, selectedStudentName]);
+
+  // Log Setoran Tahfidz siswa
+  const studentTahfidz = useMemo(() => {
+    return (database.tahfidz_setoran || [])
+      .filter((t) => t.siswa === selectedStudentName)
+      .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
+  }, [database.tahfidz_setoran, selectedStudentName]);
 
   // Ekstrakurikuler yang diikuti siswa
   const studentEkskul = useMemo(() => {
@@ -344,9 +352,11 @@ export function StudentPortal({
         n.mapel.toLowerCase().includes('agama')
     );
     const tahfidzScore =
-      tahfidzItems.length > 0
-        ? Math.round(tahfidzItems.reduce((a, b) => a + Number(b.nilai), 0) / tahfidzItems.length)
-        : 90;
+      studentTahfidz.length > 0
+        ? Math.round(studentTahfidz.reduce((a, b) => a + Number(b.nilai), 0) / studentTahfidz.length)
+        : tahfidzItems.length > 0
+          ? Math.round(tahfidzItems.reduce((a, b) => a + Number(b.nilai), 0) / tahfidzItems.length)
+          : 90;
 
     // 4. Ekstrakurikuler & Bakat
     const ekskulScore =
@@ -434,7 +444,7 @@ export function StudentPortal({
     }
 
     return { axes, compositeScore, predikat, predikatBadge };
-  }, [gradeStats, attendanceStats, studentNilai, studentEkskul, KKM_STANDARD]);
+  }, [gradeStats, attendanceStats, studentNilai, studentTahfidz, studentEkskul, KKM_STANDARD]);
 
   const getStatusBadge = (status: KehadiranStatus) => {
     switch (status) {
@@ -858,6 +868,14 @@ export function StudentPortal({
               </div>
             </div>
           </div>
+
+          {/* Grafik Radar Recharts: Kemajuan Hafalan Tahfidz & Nilai Akademik dari Waktu ke Waktu vs KKM 85 */}
+          <StudentProgressRadarChart
+            studentName={selectedStudentName}
+            academicGrades={studentNilai}
+            tahfidzSetoran={studentTahfidz}
+            kkmStandard={KKM_STANDARD}
+          />
 
           {/* Radar & Summary Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

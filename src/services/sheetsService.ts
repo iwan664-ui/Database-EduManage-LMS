@@ -81,6 +81,17 @@ export class SheetsService {
           changed = true;
         }
       }
+      // Pastikan data setoran tahfidz historis juga tersinkronisasi
+      const currentTahfidz = parsed.tahfidz_setoran || [];
+      const seedTahfidz = initialData.tahfidz_setoran || [];
+      if (currentTahfidz.length < seedTahfidz.length) {
+        const existingTahfidzIds = new Set(currentTahfidz.map((t) => t.id));
+        const missingTahfidz = seedTahfidz.filter((t) => !existingTahfidzIds.has(t.id));
+        if (missingTahfidz.length > 0) {
+          parsed.tahfidz_setoran = [...currentTahfidz, ...missingTahfidz];
+          changed = true;
+        }
+      }
       if (changed) {
         this.saveLocalDatabase(parsed);
       }
