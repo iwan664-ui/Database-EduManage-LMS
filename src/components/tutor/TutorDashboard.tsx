@@ -1,13 +1,13 @@
 import React from 'react';
 import { ActiveUser, DatabaseState, MasterKelas } from '../../types';
-import { BookOpen, Users, Calendar, Clock, PlusCircle, BarChart3, History, ArrowRight, MapPin, ShieldCheck, Award } from 'lucide-react';
+import { BookOpen, Users, Calendar, Clock, PlusCircle, BarChart3, History, ArrowRight, MapPin, ShieldCheck, Award, SendHorizontal, QrCode } from 'lucide-react';
 import { TutorAttendanceChart } from './TutorAttendanceChart';
 
 interface TutorDashboardProps {
   user: ActiveUser;
   database: DatabaseState;
   onSelectClassForInput: (kelasId: string) => void;
-  onNavigateTab: (tab: 'input' | 'crud' | 'rekap') => void;
+  onNavigateTab: (tab: 'input' | 'crud' | 'rekap' | 'rapor-pekanan' | 'scan-gerbang') => void;
 }
 
 export function TutorDashboard({
@@ -76,8 +76,22 @@ export function TutorDashboard({
               <span>Rekapitulasi Kelas</span>
             </button>
             <button
+              onClick={() => onNavigateTab('scan-gerbang')}
+              className="py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <QrCode className="w-4 h-4" />
+              <span>Scan Hadir & Pulang</span>
+            </button>
+            <button
+              onClick={() => onNavigateTab('rapor-pekanan')}
+              className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <SendHorizontal className="w-4 h-4" />
+              <span>Kirim Rapor Pekanan Ortu</span>
+            </button>
+            <button
               onClick={() => onNavigateTab('crud')}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2"
+              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
             >
               <History className="w-4 h-4" />
               <span>Riwayat Input</span>

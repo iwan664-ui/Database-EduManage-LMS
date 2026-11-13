@@ -30,6 +30,7 @@ const STORAGE_KEY_SESSION = 'edumanage_secure_session';
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 60 * 1000; // 60 detik lockout
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 jam session timeout
+const UNIFIED_PASSWORD_SHA256 = 'a13151dda35b0d1c97fecfabc2edccda8c896127a902988cf758d34e20a4fd6c';
 
 export class SecurityService {
   /**
@@ -41,6 +42,18 @@ export class SecurityService {
     const hashBuffer = await crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
+   * Verifikasi password login terpadu berbasis hash SHA-256
+   */
+  static async verifyLoginPassword(inputPassword: string): Promise<boolean> {
+    if (!inputPassword) return false;
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const hashed = await this.sha256(inputPassword);
+      return hashed === UNIFIED_PASSWORD_SHA256;
+    }
+    return false;
   }
 
   /**

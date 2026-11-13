@@ -41,6 +41,7 @@ export interface LogAbsensi {
   id_kelas: string;
   siswa: string;
   status_kehadiran: KehadiranStatus;
+  materi_diajarkan?: string;
   id_tutor: string;
   timestamp: string;
 }
@@ -53,6 +54,7 @@ export interface LogNilai {
   mapel: string;
   jenis_penilaian: string;
   nilai: number;
+  materi_diajarkan?: string;
   catatan: string;
   id_tutor: string;
   timestamp: string;
@@ -147,6 +149,7 @@ export interface BatchInputRow {
   siswa: string;
   email_siswa: string;
   status_kehadiran: KehadiranStatus;
+  materi_diajarkan: string;
   nilai: number | '';
   jenis_penilaian: string;
   catatan: string;
@@ -317,3 +320,79 @@ export interface PengumumanItem {
   penerbit: string;
   isPinned: boolean;
 }
+
+// Rapor Pekanan Guru ke Orang Tua
+export type WeeklyReportChannel = 'Portal Walmur' | 'WhatsApp' | 'Email' | 'PDF';
+
+export interface WeeklyReportSubjectDetail {
+  mapel: string;
+  nilaiTerbaru: number | null;
+  rataRata: number | null;
+  statusKkm: 'Tuntas' | 'Remedial' | 'Belum Dinilai';
+  catatan: string;
+}
+
+export interface WeeklyReportItem {
+  id: string;
+  siswa: string;
+  id_kelas: string;
+  kelas: string;
+  mapel: string;
+  cabang: string;
+  guru: string;
+  periode_label: string; // e.g., "Pekan 2 · 02 - 08 Nov 2026"
+  tanggal_mulai: string; // YYYY-MM-DD
+  tanggal_selesai: string; // YYYY-MM-DD
+  hadir: number;
+  izin: number;
+  sakit: number;
+  alfa: number;
+  persen_kehadiran: number;
+  rata_nilai: number;
+  status_kkm: 'Tuntas (≥ 85)' | 'Perlu Pendampingan (< 85)' | 'Belum Ada Nilai';
+  predikat: 'Mumtaz (Sangat Baik)' | 'Jayyid Jiddan (Baik)' | 'Perlu Pembinaan';
+  tahfidz_ringkasan: string;
+  mutabaah_skor: number | null;
+  detail_nilai: WeeklyReportSubjectDetail[];
+  catatan_guru: string;
+  rekomendasi_ortu: string;
+  kontak_wa_ortu?: string;
+  email_ortu?: string;
+  channels: WeeklyReportChannel[];
+  status_kirim: 'Terkirim' | 'Dibaca Orang Tua';
+  dikirim_pada: string; // ISO string
+  dibaca_pada?: string; // ISO string
+}
+
+// Presensi Gerbang & Kelas Real-Time (Jam Masuk & Jam Pulang)
+export type GateScanInStatus = 'Tepat Waktu' | 'Terlambat' | 'Izin' | 'Sakit';
+export type GateScanOutStatus = 'Sudah Pulang' | 'Pulang Awal' | 'Belum Pulang';
+
+export interface GateAttendanceLog {
+  id: string;
+  tanggal: string; // YYYY-MM-DD
+  siswa: string;
+  cabang: string;
+  kelas?: string;
+  kode_kartu: string; // e.g. AW29-1234
+  jam_masuk?: string; // HH:mm:ss
+  jam_pulang?: string; // HH:mm:ss
+  status_masuk?: GateScanInStatus;
+  status_pulang: GateScanOutStatus;
+  scan_oleh_masuk?: string;
+  peran_scanner_masuk?: UserRole;
+  scan_oleh_pulang?: string;
+  peran_scanner_pulang?: UserRole;
+  metode_scan: 'QR / Barcode Kartu' | 'Kamera Scanner' | 'Tap Cepat Petugas';
+  lokasi_gerbang: string;
+  catatan?: string;
+  updated_at: string;
+}
+
+export interface GateScheduleConfig {
+  batasJamMasuk: string; // HH:mm, e.g. "07:15"
+  jamPulangStandar: string; // HH:mm, e.g. "15:00"
+  lokasiDefault: string;
+}
+
+

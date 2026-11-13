@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ActiveUser, DatabaseState, MasterGuru, MasterSiswa } from '../types';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ActiveUser, DatabaseState } from '../types';
 import { BiometricService } from '../services/biometricService';
 import { SecurityService } from '../services/securityService';
 import { useToast } from './Toast';
@@ -7,17 +7,15 @@ import {
   GraduationCap,
   ShieldCheck,
   UserCheck,
-  KeyRound,
   ArrowRight,
   Eye,
   EyeOff,
   AlertCircle,
   Fingerprint,
   Lock,
-  Sparkles,
   ShieldAlert,
-  Clock,
-  Check,
+  Search,
+  User,
 } from 'lucide-react';
 
 interface AuthModalProps {
@@ -29,20 +27,19 @@ interface AuthModalProps {
   initialRole?: 'tutor' | 'siswa' | 'admin';
 }
 
-export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, initialRole = 'tutor' }: AuthModalProps) {
+const ADMIN_PRESETS = ['Super Admin Akademik', 'Kepala Sekolah', 'Koordinator Kurikulum'];
+
+export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 'tutor' }: AuthModalProps) {
   const { showToast } = useToast();
   const [selectedRole, setSelectedRole] = useState<'tutor' | 'siswa' | 'admin'>(initialRole);
   const [tutorName, setTutorName] = useState<string>(database.master_guru[0]?.guru || '');
-  const [password, setPassword] = useState<string>('aw2901234');
-  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [selectedStudent, setSelectedStudent] = useState<string>(database.master_siswa[0]?.siswa || '');
+  const [studentQuery, setStudentQuery] = useState<string>('');
+  const [adminName, setAdminName] = useState<string>('Super Admin Akademik');
+  const [password, setPassword] = useState<string>('');
+  const [showPassword, setShowPassword] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
-
-  useEffect(() => {
-    if (initialRole) {
-      setSelectedRole(initialRole);
-    }
-  }, [initialRole, isOpen]);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Lockout State
   const [isLocked, setIsLocked] = useState<boolean>(false);
@@ -53,16 +50,33 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
   const [isVerifyingBiometric, setIsVerifyingBiometric] = useState<boolean>(false);
 
   useEffect(() => {
+    if (initialRole) {
+      setSelectedRole(initialRole);
+    }
+    if (isOpen) {
+      setPassword('');
+      setErrorMsg('');
+      setShowPassword(false);
+    }
+  }, [initialRole, isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
 
-    // Check lockout status
     const status = SecurityService.isLockedOut();
     setIsLocked(status.locked);
     setLockoutTimer(status.remainingSeconds);
 
-    // Check if biometric is enrolled for current selected tutor or admin
-    checkBiometricStatus();
-  }, [isOpen, selectedRole, tutorName]);
+    if (selectedRole === 'tutor') {
+      setHasBiometricEnrolled(BiometricService.isUserEnrolled(tutorName, 'tutor'));
+    } else if (selectedRole === 'admin') {
+      setHasBiometricEnrolled(
+        BiometricService.isUserEnrolled(adminName.trim() || 'Super Admin Akademik', 'admin')
+      );
+    } else {
+      setHasBiometricEnrolled(false);
+    }
+  }, [isOpen, selectedRole, tutorName, adminName]);
 
   // Interval timer for lockout countdown
   useEffect(() => {
@@ -82,20 +96,8 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     return () => clearInterval(timer);
   }, [lockoutTimer]);
 
-  const checkBiometricStatus = () => {
-    if (selectedRole === 'tutor') {
-      const enrolled = BiometricService.isUserEnrolled(tutorName, 'tutor');
-      setHasBiometricEnrolled(enrolled);
-    } else if (selectedRole === 'admin') {
-      const enrolled = BiometricService.isUserEnrolled('Super Admin Akademik', 'admin');
-      setHasBiometricEnrolled(enrolled);
-    } else {
-      setHasBiometricEnrolled(false);
-    }
-  };
-
   // Deduplicate master_siswa to prevent duplicate options and React key collisions
-  const uniqueStudents = React.useMemo(() => {
+  const uniqueStudents = useMemo(() => {
     const seen = new Set<string>();
     return database.master_siswa.filter((s) => {
       const normalized = (s.siswa || '').trim().toLowerCase();
@@ -105,17 +107,64 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     });
   }, [database.master_siswa]);
 
+  // Filtered students for quick selection
+  const filteredStudents = useMemo(() => {
+    const q = studentQuery.trim().toLowerCase();
+    if (!q) return uniqueStudents;
+    return uniqueStudents.filter(
+      (s) => s.siswa.toLowerCase().includes(q) || s.cabang.toLowerCase().includes(q)
+    );
+  }, [uniqueStudents, studentQuery]);
+
+  // Keep selectedStudent valid when filter changes
+  useEffect(() => {
+    if (filteredStudents.length > 0 && !filteredStudents.some((s) => s.siswa === selectedStudent)) {
+      setSelectedStudent(filteredStudents[0].siswa);
+    }
+  }, [filteredStudents, selectedStudent]);
+
   if (!isOpen) return null;
 
-  // Biometric login trigger
+  const verifyPasswordOrLock = async (userName: string, role: 'tutor' | 'siswa' | 'admin'): Promise<boolean> => {
+    if (isLocked) {
+      setErrorMsg(`Akun terkunci sementara. Harap tunggu ${lockoutTimer} detik.`);
+      return false;
+    }
+
+    if (!password) {
+      setErrorMsg('Silakan masukkan password terlebih dahulu.');
+      return false;
+    }
+
+    const isValid = await SecurityService.verifyLoginPassword(password);
+    if (!isValid) {
+      const lockStatus = SecurityService.recordFailedAttempt(userName, role);
+      if (lockStatus.locked) {
+        setIsLocked(true);
+        setLockoutTimer(lockStatus.remainingSeconds);
+        setErrorMsg(
+          `Terlalu banyak percobaan gagal! Sistem terkunci selama ${lockStatus.remainingSeconds} detik untuk melindungi data.`
+        );
+      } else {
+        setErrorMsg(
+          `Password salah! Tersisa ${lockStatus.remainingAttempts} percobaan sebelum akses dikunci otomatis.`
+        );
+      }
+      return false;
+    }
+
+    return true;
+  };
+
+  // Biometric login trigger (Tutors & Admins)
   const handleBiometricLogin = async () => {
     setErrorMsg('');
     setIsVerifyingBiometric(true);
 
-    const targetUser =
-      selectedRole === 'tutor'
-        ? { name: tutorName, role: 'tutor' }
-        : { name: 'Super Admin Akademik', role: 'admin' };
+    const targetName =
+      selectedRole === 'tutor' ? tutorName : adminName.trim() || 'Super Admin Akademik';
+
+    const targetUser = { name: targetName, role: selectedRole };
 
     const res = await BiometricService.authenticateBiometric(targetUser);
     setIsVerifyingBiometric(false);
@@ -123,7 +172,6 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     if (res.success && res.user) {
       showToast('Biometrik Terverifikasi', res.message, 'success');
 
-      // Create secure session
       await SecurityService.createSecureSession({
         name: res.user.name,
         role: res.user.role,
@@ -134,9 +182,14 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
       );
 
       const activeUser: ActiveUser = {
-        role: res.user.role as any,
+        role: res.user.role as ActiveUser['role'],
         name: res.user.name,
-        id_tutor: matchedGuru ? matchedGuru.id_tutor : 'TUTOR-AUTH',
+        id_tutor:
+          selectedRole === 'tutor'
+            ? matchedGuru
+              ? matchedGuru.id_tutor
+              : 'TUTOR-AUTH'
+            : undefined,
       };
 
       onLogin(activeUser);
@@ -150,40 +203,31 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     e.preventDefault();
     setErrorMsg('');
 
-    if (isLocked) {
-      setErrorMsg(`Akun terkunci sementara. Harap tunggu ${lockoutTimer} detik.`);
-      return;
-    }
-
-    if (!tutorName.trim()) {
+    const cleanTutorName = tutorName.trim();
+    if (!cleanTutorName) {
       setErrorMsg('Silakan pilih atau masukkan Nama Guru.');
       return;
     }
 
-    if (password !== 'aw2901234') {
-      const lockStatus = SecurityService.recordFailedAttempt(tutorName, 'tutor');
-      if (lockStatus.locked) {
-        setIsLocked(true);
-        setLockoutTimer(lockStatus.remainingSeconds);
-        setErrorMsg(`Terlalu banyak percobaan gagal! Sistem terkunci selama ${lockStatus.remainingSeconds} detik untuk melindungi data.`);
-      } else {
-        setErrorMsg(`Password salah! Tersisa ${lockStatus.remainingAttempts} percobaan sebelum akun terkunci otomatis.`);
-      }
+    setIsSubmitting(true);
+    const ok = await verifyPasswordOrLock(cleanTutorName, 'tutor');
+    if (!ok) {
+      setIsSubmitting(false);
       return;
     }
 
-    // Success
     const matchedGuru = database.master_guru.find(
-      (g) => g.guru.toLowerCase().trim() === tutorName.toLowerCase().trim()
+      (g) => g.guru.toLowerCase().trim() === cleanTutorName.toLowerCase()
     );
 
     const user: ActiveUser = {
       role: 'tutor',
-      name: matchedGuru ? matchedGuru.guru : tutorName,
+      name: matchedGuru ? matchedGuru.guru : cleanTutorName,
       id_tutor: matchedGuru ? matchedGuru.id_tutor : 'TUTOR-CUSTOM',
     };
 
     await SecurityService.createSecureSession(user);
+    setIsSubmitting(false);
     onLogin(user);
   };
 
@@ -191,9 +235,16 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     e.preventDefault();
     setErrorMsg('');
 
-    const matchedSiswa = database.master_siswa.find((s) => s.siswa === selectedStudent);
+    const matchedSiswa = uniqueStudents.find((s) => s.siswa === selectedStudent);
     if (!matchedSiswa) {
-      setErrorMsg('Data siswa tidak ditemukan.');
+      setErrorMsg('Silakan pilih Nama Siswa yang terdaftar.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const ok = await verifyPasswordOrLock(matchedSiswa.siswa, 'siswa');
+    if (!ok) {
+      setIsSubmitting(false);
       return;
     }
 
@@ -204,28 +255,53 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
     };
 
     await SecurityService.createSecureSession(user);
+    setIsSubmitting(false);
     onLogin(user);
   };
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
+
+    const cleanAdminName = adminName.trim();
+    if (!cleanAdminName) {
+      setErrorMsg('Silakan masukkan Nama Admin.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const ok = await verifyPasswordOrLock(cleanAdminName, 'admin');
+    if (!ok) {
+      setIsSubmitting(false);
+      return;
+    }
+
     const user: ActiveUser = {
       role: 'admin',
-      name: 'Super Admin Akademik',
+      name: cleanAdminName,
     };
+
     await SecurityService.createSecureSession(user);
+    setIsSubmitting(false);
     onLogin(user);
+  };
+
+  const handleRoleSwitch = (role: 'tutor' | 'siswa' | 'admin') => {
+    setSelectedRole(role);
+    setErrorMsg('');
+    setPassword('');
+    setShowPassword(false);
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-md w-full overflow-hidden flex flex-col">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-md w-full overflow-hidden flex flex-col max-h-[95vh] overflow-y-auto">
         {/* Header Branding */}
         <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 p-6 text-white text-center relative flex flex-col items-center">
           {onClose && (
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all text-xs font-bold"
+              className="absolute right-4 top-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all text-xs font-bold cursor-pointer"
               title="Tutup Modal"
             >
               ✕
@@ -254,11 +330,8 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
         <div className="flex border-b border-slate-200/80 bg-slate-50/80 p-1.5 gap-1.5">
           <button
             type="button"
-            onClick={() => {
-              setSelectedRole('tutor');
-              setErrorMsg('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            onClick={() => handleRoleSwitch('tutor')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               selectedRole === 'tutor'
                 ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-700'
                 : 'text-slate-600 hover:text-slate-900 bg-white/60'
@@ -269,11 +342,8 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
           </button>
           <button
             type="button"
-            onClick={() => {
-              setSelectedRole('siswa');
-              setErrorMsg('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            onClick={() => handleRoleSwitch('siswa')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               selectedRole === 'siswa'
                 ? 'bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-700'
                 : 'text-slate-600 hover:text-slate-900 bg-white/60'
@@ -284,11 +354,8 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
           </button>
           <button
             type="button"
-            onClick={() => {
-              setSelectedRole('admin');
-              setErrorMsg('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all ${
+            onClick={() => handleRoleSwitch('admin')}
+            className={`flex-1 py-2 text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               selectedRole === 'admin'
                 ? 'bg-orange-500 text-white shadow-sm ring-1 ring-orange-600'
                 : 'text-slate-600 hover:text-slate-900 bg-white/60'
@@ -307,7 +374,9 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
               <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
               <div>
                 <strong className="block font-bold">Akses Dikunci Sementara!</strong>
-                <span>Terlalu banyak kesalahan kata sandi. Tunggu <strong>{lockoutTimer}s</strong>.</span>
+                <span>
+                  Terlalu banyak kesalahan kata sandi. Tunggu <strong>{lockoutTimer}s</strong>.
+                </span>
               </div>
             </div>
           )}
@@ -330,23 +399,25 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
                 type="button"
                 onClick={handleBiometricLogin}
                 disabled={isVerifyingBiometric || isLocked}
-                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
+                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] cursor-pointer"
               >
                 <Fingerprint className="w-4 h-4" />
-                <span>{isVerifyingBiometric ? 'Memindai Sensor Biometrik...' : 'Masuk Cepat dengan Sidik Jari / Face ID'}</span>
+                <span>
+                  {isVerifyingBiometric
+                    ? 'Memindai Sensor Biometrik...'
+                    : 'Masuk Cepat dengan Sidik Jari / Face ID'}
+                </span>
               </button>
-              <div className="text-[10px] text-blue-700/80">
-                Atau masukkan kata sandi di bawah ini
-              </div>
+              <div className="text-[10px] text-blue-700/80">Atau masukkan kata sandi di bawah ini</div>
             </div>
           )}
 
-          {/* Form Tutor */}
+          {/* Form Tutor / Guru */}
           {selectedRole === 'tutor' && (
             <form onSubmit={handleTutorLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Nama Guru / Tutor
+                  User (Nama Guru / Tutor)
                 </label>
                 <select
                   value={tutorName}
@@ -360,28 +431,28 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
                   ))}
                 </select>
                 <p className="text-[11px] text-slate-500 mt-1">
-                  Nama terdaftar pada sheet <code className="font-mono text-slate-700">master_guru</code>
+                  Pilih nama pendidik yang terdaftar pada data guru sekolah.
                 </p>
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-semibold text-slate-700">Password</label>
-                  <span className="text-[11px] text-blue-600 font-medium">Default: aw2901234</span>
-                </div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password Akses
+                </label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLocked}
-                    placeholder="Masukkan kata sandi guru"
+                    autoComplete="current-password"
+                    placeholder="Masukkan password guru..."
                     className="w-full text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-600 disabled:bg-slate-100"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -390,43 +461,82 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
 
               <button
                 type="submit"
-                disabled={isLocked}
-                className="w-full mt-2 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                disabled={isLocked || isSubmitting}
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Masuk sebagai Guru / Tutor</span>
+                <span>{isSubmitting ? 'Memverifikasi...' : 'Masuk sebagai Guru / Tutor'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
           )}
 
-          {/* Form Siswa/Walmur */}
+          {/* Form Siswa / Santri & Walmur */}
           {selectedRole === 'siswa' && (
             <form onSubmit={handleSiswaLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Pilih Nama Siswa
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-700">
+                  User (Nama Santri / Siswa)
                 </label>
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={studentQuery}
+                    onChange={(e) => setStudentQuery(e.target.value)}
+                    placeholder="Cari nama siswa..."
+                    className="w-full text-xs rounded-xl border border-slate-200 pl-8 pr-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                  />
+                </div>
                 <select
                   value={selectedStudent}
                   onChange={(e) => setSelectedStudent(e.target.value)}
-                  className="w-full text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
                 >
-                  {uniqueStudents.map((s, idx) => (
-                    <option key={`auth_opt_${s.siswa}_${idx}`} value={s.siswa}>
-                      {s.siswa} — {s.cabang}
-                    </option>
-                  ))}
+                  {filteredStudents.length === 0 ? (
+                    <option value="">Tidak ada siswa cocok</option>
+                  ) : (
+                    filteredStudents.map((s, idx) => (
+                      <option key={`auth_opt_${s.siswa}_${idx}`} value={s.siswa}>
+                        {s.siswa} — {s.cabang}
+                      </option>
+                    ))
+                  )}
                 </select>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Akses Read-Only terproteksi untuk memantau kehadiran, grafik nilai, dan ekstrakurikuler.
+                <p className="text-[11px] text-slate-500">
+                  Akses Read-Only terproteksi untuk memantau kehadiran, nilai, & tahfidz.
                 </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password Akses
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLocked}
+                    autoComplete="current-password"
+                    placeholder="Masukkan password santri..."
+                    className="w-full text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-emerald-600 disabled:bg-slate-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full mt-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                disabled={isLocked || isSubmitting || filteredStudents.length === 0}
+                className="w-full mt-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Buka Portal Siswa & Walmur</span>
+                <span>{isSubmitting ? 'Memverifikasi...' : 'Buka Portal Santri & Walmur'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
@@ -435,16 +545,69 @@ export function AuthModal({ isOpen, database, onLogin, currentUser, onClose, ini
           {/* Form Admin */}
           {selectedRole === 'admin' && (
             <form onSubmit={handleAdminLogin} className="space-y-4">
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 leading-relaxed">
-                <p className="font-bold text-slate-800 mb-1">Akses Administrator Lembaga</p>
-                Akses monitoring central, cetak rapor bulanan format resmi, audit log keamanan, analisis AI Insight Gemini, dan kalkulasi honor fee tutor.
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  User (Nama Administrator)
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={adminName}
+                    onChange={(e) => setAdminName(e.target.value)}
+                    disabled={isLocked}
+                    placeholder="Masukkan nama lengkap admin..."
+                    className="w-full text-xs font-semibold rounded-xl border border-slate-300 pl-9 pr-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-slate-100"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {ADMIN_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setAdminName(preset)}
+                      className={`text-[10px] font-semibold px-2 py-0.5 rounded-lg border transition-colors cursor-pointer ${
+                        adminName === preset
+                          ? 'bg-orange-50 border-orange-300 text-orange-700'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Password Akses
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLocked}
+                    autoComplete="current-password"
+                    placeholder="Masukkan password admin..."
+                    className="w-full text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-slate-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                disabled={isLocked || isSubmitting}
+                className="w-full py-3 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:bg-slate-400 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Masuk sebagai Administrator</span>
+                <span>{isSubmitting ? 'Memverifikasi...' : 'Masuk sebagai Administrator'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>

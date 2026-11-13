@@ -21,11 +21,12 @@ import {
   X,
   RotateCcw,
   Award,
+  QrCode,
 } from 'lucide-react';
 
 interface AdminMonitoringProps {
   database: DatabaseState;
-  onNavigateTab: (tab: 'print' | 'insight' | 'fee' | 'settings') => void;
+  onNavigateTab: (tab: 'print' | 'insight' | 'fee' | 'settings' | 'scan-gerbang') => void;
 }
 
 export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProps) {
@@ -308,8 +309,15 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
 
           <div className="flex flex-wrap gap-2.5">
             <button
+              onClick={() => onNavigateTab('scan-gerbang')}
+              className="py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <QrCode className="w-4 h-4" />
+              Scan Hadir & Pulang
+            </button>
+            <button
               onClick={() => onNavigateTab('print')}
-              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5"
+              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <FileText className="w-4 h-4" />
               Cetak Laporan Bulanan

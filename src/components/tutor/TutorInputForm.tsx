@@ -3,20 +3,18 @@ import { ActiveUser, BatchInputRow, DatabaseState, KehadiranStatus, LogAbsensi, 
 import { SheetsService } from '../../services/sheetsService';
 import { useToast } from '../Toast';
 import {
-  Calendar,
   CheckCircle2,
-  Clock,
   Save,
   Users,
   Check,
   RotateCcw,
   BookOpen,
   Sparkles,
-  Info,
   Award,
   AlertCircle,
   MessageSquare,
-  HelpCircle,
+  CopyCheck,
+  BookText,
 } from 'lucide-react';
 
 interface TutorInputFormProps {
@@ -49,6 +47,8 @@ export function TutorInputForm({
   const todayStr = new Date().toISOString().split('T')[0];
   const [inputDate, setInputDate] = useState<string>(todayStr);
   const [globalAssessmentType, setGlobalAssessmentType] = useState<string>('Ulangan Harian');
+  const [globalMateri, setGlobalMateri] = useState<string>('');
+  const [autoSyncMateri, setAutoSyncMateri] = useState<boolean>(true);
   const [enableGrades, setEnableGrades] = useState<boolean>(true);
   const [showNotesField, setShowNotesField] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -70,6 +70,7 @@ export function TutorInputForm({
       siswa: s.siswa,
       email_siswa: s.email_siswa,
       status_kehadiran: 'Hadir',
+      materi_diajarkan: globalMateri,
       nilai: '',
       jenis_penilaian: globalAssessmentType,
       catatan: '',
@@ -78,6 +79,60 @@ export function TutorInputForm({
 
     setRows(initialRows);
   }, [selectedClassId, activeClass, database.siswa_kelas]);
+
+  // Handler isi Materi Utama (1 kali isi -> semua siswa mengikuti sama persis)
+  const handleGlobalMateriChange = (value: string) => {
+    setGlobalMateri(value);
+    if (autoSyncMateri) {
+      setRows((prev) =>
+        prev.map((r) => ({
+          ...r,
+          materi_diajarkan: value,
+        }))
+      );
+    }
+  };
+
+  // Tombol paksa samakan materi ke semua siswa dari materi global atau baris pertama
+  const handleSyncMateriToAll = (sourceText?: string) => {
+    const targetMateri = sourceText !== undefined ? sourceText : globalMateri || rows[0]?.materi_diajarkan || '';
+    setGlobalMateri(targetMateri);
+    setRows((prev) =>
+      prev.map((r) => ({
+        ...r,
+        materi_diajarkan: targetMateri,
+      }))
+    );
+    showToast(
+      'Materi Disamakan ke Semua Siswa',
+      targetMateri
+        ? `"${targetMateri}" telah diterapkan seragam ke seluruh ${rows.length} siswa.`
+        : 'Kolom materi semua siswa telah disinkronkan.',
+      'success'
+    );
+  };
+
+  // Handler ubah materi di baris tabel
+  const handleRowMateriChange = (index: number, value: string) => {
+    // Jika guru mengisi baris pertama (index === 0) dan mode autoSyncMateri aktif,
+    // maka seluruh baris di bawahnya otomatis di-generate sama mengikuti baris pertama!
+    if (index === 0 && autoSyncMateri) {
+      setGlobalMateri(value);
+      setRows((prev) =>
+        prev.map((r) => ({
+          ...r,
+          materi_diajarkan: value,
+        }))
+      );
+      return;
+    }
+
+    setRows((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], materi_diajarkan: value };
+      return copy;
+    });
+  };
 
   // Handler update kehadiran per siswa
   const handleStatusChange = (index: number, status: KehadiranStatus) => {
@@ -103,15 +158,6 @@ export function TutorInputForm({
     setRows((prev) => {
       const copy = [...prev];
       copy[index] = { ...copy[index], catatan: text };
-      return copy;
-    });
-  };
-
-  // Handler ubah jenis penilaian individual
-  const handleJenisPenilaianChange = (index: number, jenis: string) => {
-    setRows((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], jenis_penilaian: jenis };
       return copy;
     });
   };
@@ -170,17 +216,18 @@ export function TutorInputForm({
     setIsSubmitting(true);
 
     try {
-      // Siapkan batch absensi
+      // Siapkan batch absensi (beserta materi yang diajarkan)
       const absensiBatch: Omit<LogAbsensi, 'timestamp'>[] = rows.map((r) => ({
         id_absensi: `ABS_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         tanggal: inputDate,
         id_kelas: activeClass.id_kelas,
         siswa: r.siswa,
         status_kehadiran: r.status_kehadiran,
+        materi_diajarkan: (r.materi_diajarkan || globalMateri || '').trim() || undefined,
         id_tutor: user.id_tutor || 'TUTOR-001',
       }));
 
-      // Siapkan batch nilai
+      // Siapkan batch nilai (beserta materi yang diajarkan)
       const nilaiBatch: Omit<LogNilai, 'timestamp'>[] = [];
       if (enableGrades) {
         rows.forEach((r) => {
@@ -193,6 +240,7 @@ export function TutorInputForm({
               mapel: activeClass.mapel,
               jenis_penilaian: r.jenis_penilaian || globalAssessmentType,
               nilai: Number(r.nilai),
+              materi_diajarkan: (r.materi_diajarkan || globalMateri || '').trim() || undefined,
               catatan: r.catatan || '',
               id_tutor: user.id_tutor || 'TUTOR-001',
             });
@@ -229,14 +277,14 @@ export function TutorInputForm({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-lg font-bold text-slate-900">Input Absensi & Nilai Guru</h2>
+              <h2 className="text-lg font-bold text-slate-900">Input Absensi, Materi & Nilai Guru</h2>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
                 <Award className="w-3.5 h-3.5 text-blue-600" />
                 KKM: {KKM_STANDARD}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Format Kolom Standar: <strong className="text-slate-800">NO, NAMA SISWA, KEHADIRAN, NILAI</strong> (Standar KKM 85).
+              Format Kolom: <strong className="text-slate-800">NO, NAMA SISWA, KEHADIRAN, NILAI, MATERI YANG DIAJARKAN</strong>. Isi materi 1 kali dan seluruh siswa otomatis mengikuti sama.
             </p>
           </div>
 
@@ -244,7 +292,7 @@ export function TutorInputForm({
             <button
               type="button"
               onClick={handleMarkAllHadir}
-              className="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
+              className="py-2 px-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
               title="Tandai semua kehadiran sebagai Hadir"
             >
               <Check className="w-4 h-4 text-emerald-600" />
@@ -255,7 +303,7 @@ export function TutorInputForm({
               <button
                 type="button"
                 onClick={handleAutofillKKM}
-                className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs"
+                className="py-2 px-3 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-semibold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer"
                 title="Isi otomatis nilai yang masih kosong dengan KKM 85"
               >
                 <Sparkles className="w-4 h-4 text-amber-600" />
@@ -266,7 +314,7 @@ export function TutorInputForm({
             <button
               type="button"
               onClick={() => setShowNotesField(!showNotesField)}
-              className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 showNotesField
                   ? 'bg-purple-50 border-purple-200 text-purple-700'
                   : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -279,7 +327,7 @@ export function TutorInputForm({
             <button
               type="button"
               onClick={() => setEnableGrades(!enableGrades)}
-              className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`py-2 px-3 rounded-xl border text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 enableGrades
                   ? 'bg-blue-50 border-blue-200 text-blue-700'
                   : 'bg-slate-50 border-slate-200 text-slate-500'
@@ -317,7 +365,7 @@ export function TutorInputForm({
                 <button
                   type="button"
                   onClick={() => setInputDate(todayStr)}
-                  className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5"
+                  className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5 cursor-pointer"
                 >
                   <RotateCcw className="w-2.5 h-2.5" /> Hari ini
                 </button>
@@ -374,9 +422,48 @@ export function TutorInputForm({
             )}
           </div>
         </div>
+
+        {/* 1-Click Auto-Generated Materi yang Diajarkan Master Bar */}
+        <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/90 space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <label className="text-xs font-extrabold text-blue-950 flex items-center gap-1.5">
+              <BookText className="w-4 h-4 text-blue-600" />
+              <span>Materi yang Diajarkan Hari Ini (Isi 1 Kali → Semua Siswa Otomatis Sama)</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAutoSyncMateri((prev) => !prev)}
+                className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all cursor-pointer ${
+                  autoSyncMateri
+                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    : 'bg-white text-slate-600 border-slate-300'
+                }`}
+              >
+                {autoSyncMateri ? 'Auto-Samakan: AKTIF' : 'Auto-Samakan: NONAKTIF'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSyncMateriToAll()}
+                className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <CopyCheck className="w-3 h-3" />
+                <span>Samakan Semua Baris</span>
+              </button>
+            </div>
+          </div>
+
+          <input
+            type="text"
+            value={globalMateri}
+            onChange={(e) => handleGlobalMateriChange(e.target.value)}
+            placeholder="Contoh: Bab 3 - Persamaan Kuadrat & Penerapan Soal Cerita (cukup isi 1 kali di sini atau di baris siswa #01)"
+            className="w-full text-xs font-semibold rounded-xl border border-blue-300 px-3.5 py-2.5 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+          />
+        </div>
       </div>
 
-      {/* Roster Input Form: FORMAT KOLOM: NO, NAMA SISWA, KEHADIRAN, NILAI */}
+      {/* Roster Input Form: FORMAT KOLOM: NO, NAMA SISWA, KEHADIRAN, NILAI, MATERI YANG DIAJARKAN */}
       <form onSubmit={handleSubmit} className="space-y-4">
         {rows.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-500">
@@ -410,7 +497,7 @@ export function TutorInputForm({
               </div>
             </div>
 
-            {/* Desktop & Tablet Table (Explicit Columns: NO, NAMA SISWA, KEHADIRAN, NILAI) */}
+            {/* Desktop & Tablet Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-700 border-collapse">
                 <thead className="bg-slate-100/90 text-slate-800 text-[11px] uppercase tracking-wider border-b border-slate-200">
@@ -418,14 +505,17 @@ export function TutorInputForm({
                     <th className="py-3.5 px-4 font-bold text-center w-14 shrink-0 border-r border-slate-200/60">
                       NO
                     </th>
-                    <th className="py-3.5 px-4 font-bold min-w-[220px]">
+                    <th className="py-3.5 px-4 font-bold min-w-[200px]">
                       NAMA SISWA
                     </th>
-                    <th className="py-3.5 px-4 font-bold min-w-[280px]">
+                    <th className="py-3.5 px-4 font-bold min-w-[260px]">
                       KEHADIRAN
                     </th>
-                    <th className="py-3.5 px-4 font-bold min-w-[220px]">
+                    <th className="py-3.5 px-4 font-bold min-w-[210px]">
                       NILAI <span className="font-extrabold text-blue-700">(KKM: {KKM_STANDARD})</span>
+                    </th>
+                    <th className="py-3.5 px-4 font-bold min-w-[240px]">
+                      MATERI YANG DIAJARKAN
                     </th>
                   </tr>
                 </thead>
@@ -461,7 +551,7 @@ export function TutorInputForm({
                                   key={opt.value}
                                   type="button"
                                   onClick={() => handleStatusChange(idx, opt.value)}
-                                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                                  className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                                     row.status_kehadiran === opt.value
                                       ? opt.activeColor
                                       : `text-slate-600 ${opt.color}`
@@ -513,7 +603,7 @@ export function TutorInputForm({
                                     <button
                                       type="button"
                                       onClick={() => handleNilaiChange(idx, String(KKM_STANDARD))}
-                                      className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                                      className="text-[10px] text-blue-600 hover:text-blue-800 hover:underline font-semibold cursor-pointer"
                                       title="Isi KKM 85 untuk siswa ini"
                                     >
                                       + KKM (85)
@@ -525,13 +615,40 @@ export function TutorInputForm({
                               <span className="text-slate-400 text-xs italic">Hanya Absensi</span>
                             )}
                           </td>
+
+                          {/* KOLOM 5: MATERI YANG DIAJARKAN (Auto-synced from 1st fill) */}
+                          <td className="py-3.5 px-4">
+                            <div className="space-y-1">
+                              <input
+                                type="text"
+                                value={row.materi_diajarkan}
+                                onChange={(e) => handleRowMateriChange(idx, e.target.value)}
+                                placeholder={
+                                  idx === 0
+                                    ? 'Isi materi di sini (otomatis samakan semua)...'
+                                    : 'Otomatis mengikuti materi yang sama...'
+                                }
+                                className={`w-full text-xs rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-colors ${
+                                  idx === 0 && autoSyncMateri
+                                    ? 'border-blue-300 bg-blue-50/60 font-semibold text-slate-900'
+                                    : 'border-slate-200 bg-slate-50 focus:bg-white text-slate-800'
+                                }`}
+                              />
+                              {idx === 0 && autoSyncMateri && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700">
+                                  <CopyCheck className="w-3 h-3" />
+                                  Isi di baris #01 otomatis menyamakan baris lainnya
+                                </span>
+                              )}
+                            </div>
+                          </td>
                         </tr>
 
                         {/* Expandable Notes & Detail Row if Enabled */}
                         {showNotesField && enableGrades && (
                           <tr className="bg-slate-50/40">
                             <td className="border-r border-slate-100"></td>
-                            <td colSpan={3} className="px-4 py-2">
+                            <td colSpan={4} className="px-4 py-2">
                               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                                 <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">
                                   Catatan Tutor untuk {row.siswa}:
@@ -569,7 +686,7 @@ export function TutorInputForm({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full sm:w-auto py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                className="w-full sm:w-auto py-3 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -579,7 +696,7 @@ export function TutorInputForm({
                 ) : (
                   <>
                     <Save className="w-4 h-4" />
-                    <span>Simpan Format (NO, NAMA SISWA, KEHADIRAN, NILAI)</span>
+                    <span>Simpan</span>
                   </>
                 )}
               </button>

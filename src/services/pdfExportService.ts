@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable, { UserOptions } from 'jspdf-autotable';
-import { LogAbsensi, LogNilai } from '../types';
+import { GateAttendanceLog, LogAbsensi, LogNilai, WeeklyReportItem } from '../types';
 
 export interface RecapRowData {
   siswa: string;
@@ -661,5 +661,262 @@ export class PdfExportService {
 
     const cleanFilename = `Laporan_Bulanan_${className.replace(/\s+/g, '_')}_${month}_${year}.pdf`;
     doc.save(cleanFilename);
+  }
+
+  // ==========================================
+  // 5. EXPORT RAPOR PEKANAN SANTRI KE ORANG TUA
+  // ==========================================
+  static exportWeeklyReportPdf(report: WeeklyReportItem): void {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    const startY = this.drawLetterhead(
+      doc,
+      'RAPOR PEKANAN PERKEMBANGAN BELAJAR SANTRI',
+      `Periode Evaluasi: ${report.periode_label} (${report.tanggal_mulai} s.d. ${report.tanggal_selesai})`
+    );
+
+    const metaY = this.drawMetadataBox(doc, startY, [
+      { label: 'Nama Santri', value: report.siswa },
+      { label: 'Kelas / Kampus', value: `${report.kelas} · ${report.cabang}` },
+      { label: 'Guru Pengampu', value: report.guru },
+      { label: 'Predikat Pekanan', value: report.predikat },
+    ]);
+
+    // Ringkasan Presensi & Nilai Pekanan
+    autoTable(doc, {
+      startY: metaY + 2,
+      head: [['Ringkasan Presensi Pekanan', 'Kehadiran (%)', 'Rata-rata Nilai', 'Status KKM (85)', 'Mutaba\'ah Ibadah']],
+      body: [
+        [
+          `Hadir: ${report.hadir} | Izin: ${report.izin} | Sakit: ${report.sakit} | Alfa: ${report.alfa}`,
+          `${report.persen_kehadiran}%`,
+          report.rata_nilai > 0 ? String(report.rata_nilai) : '-',
+          report.status_kkm,
+          report.mutabaah_skor !== null ? `${report.mutabaah_skor} / 100` : 'Terpantau',
+        ],
+      ],
+      theme: 'grid',
+      headStyles: {
+        fillColor: [16, 185, 129],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 2.5,
+        halign: 'center',
+        textColor: [15, 23, 42],
+      },
+      columnStyles: {
+        0: { cellWidth: 64 },
+        3: { fontStyle: 'bold' },
+      },
+    });
+
+    const afterSummaryY = ((doc as any).lastAutoTable?.finalY || metaY + 20) + 6;
+
+    // Tabel Rincian Mata Pelajaran
+    const subjectRows =
+      report.detail_nilai.length > 0
+        ? report.detail_nilai.map((d, idx) => [
+            String(idx + 1),
+            d.mapel,
+            d.nilaiTerbaru !== null ? String(d.nilaiTerbaru) : '-',
+            d.rataRata !== null ? String(d.rataRata) : '-',
+            d.statusKkm,
+            d.catatan || '-',
+          ])
+        : [[
+            '1',
+            report.mapel,
+            report.rata_nilai > 0 ? String(report.rata_nilai) : '-',
+            report.rata_nilai > 0 ? String(report.rata_nilai) : '-',
+            report.status_kkm,
+            'Pembelajaran pekanan berjalan tertib.',
+          ]];
+
+    autoTable(doc, {
+      startY: afterSummaryY,
+      head: [['No', 'Mata Pelajaran', 'Nilai Terbaru', 'Rata-rata', 'Status KKM', 'Catatan Capaian']],
+      body: subjectRows,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [30, 64, 175],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 2.2,
+        textColor: [30, 41, 59],
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },
+        1: { fontStyle: 'bold', cellWidth: 42 },
+        2: { halign: 'center', cellWidth: 22 },
+        3: { halign: 'center', cellWidth: 20 },
+        4: { halign: 'center', fontStyle: 'bold', cellWidth: 26 },
+        5: { cellWidth: 62 },
+      },
+    });
+
+    const afterTableY = ((doc as any).lastAutoTable?.finalY || afterSummaryY + 25) + 6;
+
+    // Kotak Tahfidz, Catatan Guru, dan Rekomendasi Orang Tua
+    autoTable(doc, {
+      startY: afterTableY,
+      head: [['Aspek Pembinaan Pekanan', 'Uraian Evaluasi & Rekomendasi untuk Orang Tua / Wali']],
+      body: [
+        ['Tahfidz & Tilawah Al-Qur\'an', report.tahfidz_ringkasan],
+        ['Catatan Guru Pengampu', report.catatan_guru],
+        ['Rekomendasi Pendampingan di Rumah', report.rekomendasi_ortu],
+      ],
+      theme: 'grid',
+      headStyles: {
+        fillColor: [249, 115, 22],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+      },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        textColor: [30, 41, 59],
+        valign: 'top',
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 52, fillColor: [255, 247, 237] },
+        1: { cellWidth: pageWidth - 28 - 52 },
+      },
+    });
+
+    this.drawFooterSignatures(doc, 'Guru Pengampu / Wali Kelas', report.guru || 'Guru Akademik');
+
+    const safeName = report.siswa.replace(/[^a-zA-Z0-9]+/g, '_');
+    doc.save(`Rapor_Pekanan_${safeName}_${report.tanggal_selesai}.pdf`);
+  }
+
+  // ==========================================
+  // 6. EXPORT LOG JAM HADIR & PULANG SANTRI (GERBANG & KELAS)
+  // ==========================================
+  static exportGateAttendancePdf(params: {
+    title?: string;
+    printedBy: string;
+    filterLabel: string;
+    logs: GateAttendanceLog[];
+  }): void {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const { title, printedBy, filterLabel, logs } = params;
+
+    const startY = this.drawLetterhead(
+      doc,
+      title || 'LAPORAN RIWAYAT JAM HADIR & JAM PULANG SANTRI',
+      'Sistem Scan Smart Card ID Terintegrasi Gerbang Sekolah, Guru & Manajemen'
+    );
+
+    const onTimeCount = logs.filter((l) => l.status_masuk === 'Tepat Waktu').length;
+    const lateCount = logs.filter((l) => l.status_masuk === 'Terlambat').length;
+    const outCount = logs.filter((l) => Boolean(l.jam_pulang)).length;
+
+    const metaY = this.drawMetadataBox(doc, startY, [
+      { label: 'Dicetak Oleh', value: printedBy },
+      { label: 'Filter / Subjek', value: filterLabel },
+      { label: 'Total Catatan', value: `${logs.length} Hari / Sesi Scan` },
+      { label: 'Ringkasan', value: `Tepat Waktu: ${onTimeCount} | Terlambat: ${lateCount} | Sudah Pulang: ${outCount}` },
+    ]);
+
+    const parseDur = (inTime?: string, outTime?: string) => {
+      if (!inTime || !outTime) return '-';
+      const toSec = (t: string) => {
+        const p = t.replace(/\./g, ':').split(':').map(Number);
+        return (p[0] || 0) * 3600 + (p[1] || 0) * 60 + (p[2] || 0);
+      };
+      const d = toSec(outTime) - toSec(inTime);
+      if (d <= 0) return '-';
+      return `${Math.floor(d / 3600)}j ${Math.floor((d % 3600) / 60)}m`;
+    };
+
+    const body = logs.map((l, idx) => [
+      String(idx + 1),
+      l.tanggal,
+      l.siswa,
+      l.kode_kartu,
+      l.jam_masuk || '-',
+      l.status_masuk || '-',
+      l.jam_pulang || '-',
+      l.status_pulang,
+      parseDur(l.jam_masuk, l.jam_pulang),
+      l.scan_oleh_masuk || l.scan_oleh_pulang || '-',
+      l.lokasi_gerbang || '-',
+    ]);
+
+    autoTable(doc, {
+      startY: metaY + 2,
+      head: [
+        [
+          'No',
+          'Tanggal',
+          'Nama Santri',
+          'ID Kartu',
+          'Jam Hadir',
+          'Status Masuk',
+          'Jam Pulang',
+          'Status Pulang',
+          'Durasi',
+          'Petugas Scan',
+          'Lokasi Scan',
+        ],
+      ],
+      body,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [30, 64, 175],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 7,
+        cellPadding: 1.8,
+        textColor: [30, 41, 59],
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 9 },
+        1: { halign: 'center', cellWidth: 21 },
+        2: { fontStyle: 'bold', cellWidth: 42 },
+        3: { halign: 'center', cellWidth: 22 },
+        4: { halign: 'center', fontStyle: 'bold', cellWidth: 20 },
+        5: { halign: 'center', cellWidth: 24 },
+        6: { halign: 'center', fontStyle: 'bold', cellWidth: 20 },
+        7: { halign: 'center', cellWidth: 24 },
+        8: { halign: 'center', cellWidth: 16 },
+        9: { cellWidth: 34 },
+        10: { cellWidth: 37 },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 5) {
+          const val = String(data.cell.raw);
+          if (val === 'Tepat Waktu') {
+            data.cell.styles.textColor = [16, 120, 80];
+            data.cell.styles.fillColor = [236, 253, 245];
+          } else if (val === 'Terlambat') {
+            data.cell.styles.textColor = [225, 29, 72];
+            data.cell.styles.fillColor = [255, 241, 242];
+          }
+        }
+      },
+    });
+
+    this.drawFooterSignatures(doc, 'Penanggung Jawab Presensi Sekolah', printedBy);
+    doc.save(`Laporan_Hadir_Pulang_Santri_${Date.now().toString().slice(-4)}.pdf`);
   }
 }

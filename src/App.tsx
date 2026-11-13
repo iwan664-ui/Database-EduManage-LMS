@@ -6,15 +6,17 @@ import { AuthModal } from './components/AuthModal';
 import { SheetsSetupModal } from './components/SheetsSetupModal';
 import { SecuritySettingsModal } from './components/SecuritySettingsModal';
 import { BiometricService } from './services/biometricService';
+import { SidebarNav } from './components/SidebarNav';
 
 // Tutor Components
 import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { TutorInputForm } from './components/tutor/TutorInputForm';
 import { TutorHistoryCrud } from './components/tutor/TutorHistoryCrud';
 import { TutorRecapView } from './components/tutor/TutorRecapView';
+import { TutorWeeklyReportSender } from './components/tutor/TutorWeeklyReportSender';
 
 // Student Component
-import { StudentPortal } from './components/student/StudentPortal';
+import { StudentPortal, StudentPortalTab } from './components/student/StudentPortal';
 
 // Admin Components
 import { AdminMonitoring } from './components/admin/AdminMonitoring';
@@ -26,6 +28,7 @@ import { AdminTutorFeeReport } from './components/admin/AdminTutorFeeReport';
 import { CbtExamEngine } from './components/cbt/CbtExamEngine';
 import { DigitalMaktabah } from './components/library/DigitalMaktabah';
 import { AttendanceScannerModal } from './components/scanner/AttendanceScannerModal';
+import { GateAttendanceMonitor } from './components/scanner/GateAttendanceMonitor';
 import { AssignmentHub } from './components/assignment/AssignmentHub';
 import { VirtualClassroomHub } from './components/virtual/VirtualClassroomHub';
 import { AnnouncementBulletinBoard } from './components/announcement/AnnouncementBulletinBoard';
@@ -63,6 +66,7 @@ import {
   FileCheck,
   Video,
   Megaphone,
+  Menu,
 } from 'lucide-react';
 
 function LMSApp() {
@@ -89,6 +93,9 @@ function LMSApp() {
   // For siswa: 'portal'
   // For admin: 'monitoring' | 'print' | 'insight' | 'fee' | 'cbt' | 'maktabah'
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [studentTab, setStudentTab] = useState<StudentPortalTab>('radar');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState<boolean>(false);
 
   // Selected Class ID for Input form
   const [selectedClassId, setSelectedClassId] = useState<string>('KLS-10A-MAT');
@@ -99,9 +106,16 @@ function LMSApp() {
   const [showSheetsModal, setShowSheetsModal] = useState<boolean>(false);
   const [showSecurityModal, setShowSecurityModal] = useState<boolean>(false);
   const [showScannerModal, setShowScannerModal] = useState<boolean>(false);
+  const [scannerInitialMode, setScannerInitialMode] = useState<'auto' | 'masuk' | 'pulang'>('auto');
+  const [gateRefreshTick, setGateRefreshTick] = useState<number>(0);
   const [hasSheetsUrl, setHasSheetsUrl] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [hasBiometric, setHasBiometric] = useState<boolean>(false);
+
+  const openScannerWithMode = (mode: 'auto' | 'masuk' | 'pulang' = 'auto') => {
+    setScannerInitialMode(mode);
+    setShowScannerModal(true);
+  };
 
   const openPortalLogin = (role: 'tutor' | 'siswa' | 'admin') => {
     setAuthModalRole(role);
@@ -127,6 +141,7 @@ function LMSApp() {
       setActiveTab('dashboard');
     } else if (user.role === 'siswa') {
       setActiveTab('portal');
+      setStudentTab('radar');
     } else if (user.role === 'admin') {
       setActiveTab('monitoring');
     }
@@ -159,23 +174,33 @@ function LMSApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col font-sans pb-20 md:pb-8 text-slate-800">
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
       {/* Top Brand Accent Line (Blue, Orange, Green) */}
-      <div className="h-1.5 bg-gradient-to-r from-blue-700 via-orange-500 to-emerald-500 w-full" />
+      <div className="h-1.5 bg-gradient-to-r from-blue-700 via-orange-500 to-emerald-500 w-full sticky top-0 z-50" />
 
-      {/* Top Navbar */}
-      <header className="print:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
+      {/* Slim Top Header (Brand, User & Sync only — all features live in Left Sidebar) */}
+      <header className="print:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+        <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+          {/* Left: Mobile Drawer Trigger + Logo & Brand */}
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              type="button"
+              onClick={() => setMobileSidebarOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer shrink-0"
+              aria-label="Buka Menu Fitur"
+              title="Buka Menu Fitur"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
             <img
               src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
               alt="Logo AL-WILDAN ISLAMIC SCHOOL 29 KOTA DEPOK"
-              className="w-10 h-10 object-contain rounded-full bg-white p-0.5 shadow-sm border border-slate-200 shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-full bg-white p-0.5 shadow-sm border border-slate-200 shrink-0"
             />
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-extrabold text-blue-950 tracking-tight leading-tight">
+                <h1 className="text-sm sm:text-base font-extrabold text-blue-950 tracking-tight leading-tight truncate">
                   AL-WILDAN ISLAMIC SCHOOL 29
                 </h1>
                 <span className="hidden sm:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
@@ -191,89 +216,46 @@ function LMSApp() {
             </div>
           </div>
 
-          {/* Right Header Actions */}
-          <div className="flex items-center gap-2">
-            {/* Active Focused Role Badge */}
+          {/* Right Header Identity & Quick Sync */}
+          <div className="flex items-center gap-2 shrink-0">
             {currentUser && (
-              <div className="flex items-center gap-2">
+              <div className="hidden sm:flex items-center gap-2">
                 {currentUser.role === 'tutor' && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 text-xs font-black border border-blue-200 shadow-2xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 text-xs font-black border border-blue-200 shadow-2xs">
                     <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
                     <span>PORTAL GURU</span>
                   </span>
                 )}
                 {currentUser.role === 'siswa' && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-100 text-orange-900 text-xs font-black border border-orange-200 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-black border border-emerald-200 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
                     <span>PORTAL SANTRI</span>
                   </span>
                 )}
                 {currentUser.role === 'admin' && (
-                  <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-black border border-emerald-200 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-100 text-orange-900 text-xs font-black border border-orange-200 shadow-2xs">
+                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
                     <span>PORTAL ADMIN</span>
                   </span>
                 )}
               </div>
             )}
 
-            {/* Barcode & QR Scanner Modal Trigger */}
-            <button
-              onClick={() => setShowScannerModal(true)}
-              className="py-1.5 px-3 rounded-xl text-xs font-bold border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
-              title="Scanner Presensi QR & Barcode Kartu Santri"
-            >
-              <QrCode className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden lg:inline">Scan Presensi</span>
-            </button>
-
-            {/* Security & Biometric Button */}
-            <button
-              onClick={() => setShowSecurityModal(true)}
-              className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all cursor-pointer ${
-                hasBiometric
-                  ? 'bg-blue-50 border-blue-300 text-blue-800 hover:bg-blue-100'
-                  : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
-              }`}
-              title="Pusat Keamanan & Autentikasi Biometrik WebAuthn"
-            >
-              <Fingerprint className={`w-3.5 h-3.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
-              <span className="hidden xl:inline">
-                {hasBiometric ? 'Biometrik Aktif' : 'Keamanan'}
-              </span>
-            </button>
-
-            {/* Google Sheets Status Pill */}
-            <button
-              onClick={() => setShowSheetsModal(true)}
-              className={`py-1.5 px-3 rounded-xl text-xs font-semibold border flex items-center gap-1.5 transition-all ${
-                hasSheetsUrl
-                  ? 'bg-emerald-50 border-emerald-300 text-emerald-800 hover:bg-emerald-100'
-                  : 'bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100'
-              }`}
-              title="Pengaturan Google Sheets"
-            >
-              <FileSpreadsheet className={`w-3.5 h-3.5 ${hasSheetsUrl ? 'text-emerald-600' : 'text-slate-500'}`} />
-              <span className="hidden md:inline">
-                {hasSheetsUrl ? 'Sheets OK' : 'Setup Sheets'}
-              </span>
-            </button>
-
             {/* Quick Refresh Data */}
             <button
               onClick={handleQuickSync}
               disabled={isRefreshing}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
               title="Sinkronkan data"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
             </button>
 
-            {/* User Profile & Role Info with Dedicated Logout Button */}
+            {/* User Profile & Logout */}
             {currentUser ? (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
                 <div className="hidden md:flex flex-col text-right">
-                  <span className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
+                  <span className="text-xs font-bold text-slate-900 truncate max-w-[140px]">
                     {currentUser.name}
                   </span>
                   <span className="text-[10px] text-slate-500 font-mono">
@@ -283,7 +265,7 @@ function LMSApp() {
 
                 <button
                   onClick={handleLogout}
-                  className="py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs"
+                  className="py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
                   title="Keluar dari akun ini dan kembali ke pemilihan portal"
                 >
                   <LogOut className="w-3.5 h-3.5 text-rose-600" />
@@ -293,240 +275,38 @@ function LMSApp() {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="py-1.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                className="py-1.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
               >
                 <span>Masuk Portal</span>
               </button>
             )}
           </div>
         </div>
-
-        {/* Desktop Role Navigation Bar */}
-        <div className="hidden md:block bg-slate-50 border-t border-slate-200/80">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 py-1.5">
-            {currentUser?.role === 'tutor' && (
-              <>
-                <button
-                  onClick={() => setActiveTab('dashboard')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'dashboard'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <LayoutDashboard className="w-3.5 h-3.5" />
-                  Dashboard Tutor
-                </button>
-                <button
-                  onClick={() => setActiveTab('input')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'input'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <PlusCircle className="w-3.5 h-3.5 text-orange-300" />
-                  Input Presensi & Nilai
-                </button>
-                <button
-                  onClick={() => setActiveTab('crud')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'crud'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <History className="w-3.5 h-3.5" />
-                  Riwayat & CRUD Data
-                </button>
-                <button
-                  onClick={() => setActiveTab('rekap')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'rekap'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  Rekapitulasi Kelas & Mapel
-                </button>
-                <button
-                  onClick={() => setActiveTab('cbt')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'cbt'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <FileQuestion className="w-3.5 h-3.5 text-orange-300" />
-                  Ujian CBT (KKM 85)
-                </button>
-                <button
-                  onClick={() => setActiveTab('tugas')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'tugas'
-                      ? 'bg-blue-700 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <FileCheck className="w-3.5 h-3.5 text-orange-300" />
-                  Kelola Tugas & PR
-                </button>
-                <button
-                  onClick={() => setActiveTab('virtual')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'virtual'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Video className="w-3.5 h-3.5 text-emerald-300" />
-                  Kelas Virtual & Forum
-                </button>
-                <button
-                  onClick={() => setActiveTab('maktabah')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'maktabah'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-emerald-300" />
-                  Digital Maktabah
-                </button>
-                <button
-                  onClick={() => setActiveTab('pengumuman')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'pengumuman'
-                      ? 'bg-orange-500 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Megaphone className="w-3.5 h-3.5 text-orange-300" />
-                  Pengumuman
-                </button>
-              </>
-            )}
-
-            {currentUser?.role === 'siswa' && (
-              <button
-                onClick={() => setActiveTab('portal')}
-                className="py-2 px-3.5 rounded-lg text-xs font-bold bg-blue-600 text-white shadow-xs flex items-center gap-1.5"
-              >
-                <GraduationCap className="w-3.5 h-3.5 text-orange-300" />
-                Portal Laporan Siswa & Walmur
-              </button>
-            )}
-
-            {currentUser?.role === 'admin' && (
-              <>
-                <button
-                  onClick={() => setActiveTab('monitoring')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'monitoring'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Monitoring Central
-                </button>
-                <button
-                  onClick={() => setActiveTab('print')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'print'
-                      ? 'bg-blue-700 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  Cetak Rapor Bulanan (PDF)
-                </button>
-                <button
-                  onClick={() => setActiveTab('insight')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'insight'
-                      ? 'bg-orange-500 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Auto AI Insight
-                </button>
-                <button
-                  onClick={() => setActiveTab('fee')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'fee'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <DollarSign className="w-3.5 h-3.5" />
-                  Rekapitulasi Honor Tutor
-                </button>
-                <button
-                  onClick={() => setActiveTab('tugas')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'tugas'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <FileCheck className="w-3.5 h-3.5" />
-                  Monitoring Tugas
-                </button>
-                <button
-                  onClick={() => setActiveTab('cbt')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'cbt'
-                      ? 'bg-blue-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <FileQuestion className="w-3.5 h-3.5" />
-                  Pusat Ujian CBT
-                </button>
-                <button
-                  onClick={() => setActiveTab('virtual')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'virtual'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Video className="w-3.5 h-3.5" />
-                  Ruang Virtual
-                </button>
-                <button
-                  onClick={() => setActiveTab('maktabah')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'maktabah'
-                      ? 'bg-emerald-600 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Digital Maktabah
-                </button>
-                <button
-                  onClick={() => setActiveTab('pengumuman')}
-                  className={`py-2 px-3.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                    activeTab === 'pengumuman'
-                      ? 'bg-orange-500 text-white shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Megaphone className="w-3.5 h-3.5" />
-                  Pengumuman
-                </button>
-              </>
-            )}
-          </div>
-        </div>
       </header>
 
-      {/* Main Content Body */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+      {/* App Shell: Left Sidebar (All Features) + Main Content */}
+      <div className="flex flex-1 w-full">
+        <SidebarNav
+          currentUser={currentUser}
+          activeTab={activeTab}
+          studentTab={studentTab}
+          onSelectTab={(tab) => setActiveTab(tab)}
+          onSelectStudentTab={(tab) => setStudentTab(tab)}
+          onOpenAuthModal={(role) => openPortalLogin(role)}
+          onOpenScanner={() => openScannerWithMode('auto')}
+          onOpenSecurity={() => setShowSecurityModal(true)}
+          onOpenSheets={() => setShowSheetsModal(true)}
+          onLogout={handleLogout}
+          hasBiometric={hasBiometric}
+          hasSheetsUrl={hasSheetsUrl}
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
+        />
+
+        {/* Main Content Body */}
+        <main className="flex-1 min-w-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         {/* Gateway Screen when not logged in - STRICT ROLE FOCUS */}
         {!currentUser && (
           <div className="space-y-8 animate-fade-in py-2 sm:py-6">
@@ -734,47 +514,30 @@ function LMSApp() {
               </div>
             </div>
 
-            {/* Quick Demo Instant Access Bar */}
+            {/* Quick Portal Login Bar (Password Protected) */}
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-slate-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
               <div className="flex items-center gap-2 font-bold text-slate-800">
                 <Sparkles className="w-4 h-4 text-orange-500" />
-                <span>Masuk Cepat Sekali Klik (Mode Pengujian & Demonstrasi):</span>
+                <span>Akses Cepat Portal Login (Terproteksi Password):</span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
-                  onClick={() => {
-                    handleLogin({
-                      role: 'tutor',
-                      name: database.master_guru[0]?.guru || 'Budi Santoso, S.Pd.',
-                      id_tutor: database.master_guru[0]?.id_tutor || 'TUTOR-001',
-                    });
-                  }}
+                  onClick={() => openPortalLogin('tutor')}
                   className="px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold border border-blue-200 transition-all cursor-pointer"
                 >
-                  Masuk sebagai Guru
+                  Login Guru
                 </button>
                 <button
-                  onClick={() => {
-                    handleLogin({
-                      role: 'siswa',
-                      name: database.master_siswa[0]?.siswa || 'Ahmad Dahlan',
-                      email: database.master_siswa[0]?.email_siswa || 'ahmad@alwildan29.sch.id',
-                    });
-                  }}
+                  onClick={() => openPortalLogin('siswa')}
                   className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 transition-all cursor-pointer"
                 >
-                  Masuk sebagai Santri
+                  Login Santri
                 </button>
                 <button
-                  onClick={() => {
-                    handleLogin({
-                      role: 'admin',
-                      name: 'Super Admin Akademik',
-                    });
-                  }}
+                  onClick={() => openPortalLogin('admin')}
                   className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold border border-orange-200 transition-all cursor-pointer"
                 >
-                  Masuk sebagai Admin
+                  Login Admin
                 </button>
               </div>
             </div>
@@ -821,6 +584,20 @@ function LMSApp() {
               <TutorRecapView database={database} tutorName={currentUser.name} />
             )}
 
+            {activeTab === 'rapor-pekanan' && (
+              <TutorWeeklyReportSender user={currentUser} database={database} />
+            )}
+
+            {activeTab === 'scan-gerbang' && (
+              <GateAttendanceMonitor
+                currentUser={currentUser}
+                database={database}
+                onOpenScannerModal={(mode) => openScannerWithMode(mode)}
+                refreshSignal={gateRefreshTick}
+                onDataSynced={reloadDatabase}
+              />
+            )}
+
             {activeTab === 'cbt' && (
               <CbtExamEngine
                 isTutorView
@@ -854,7 +631,13 @@ function LMSApp() {
 
         {/* FOCUSED ROLE 2: SANTRI & WALI MURID */}
         {currentUser?.role === 'siswa' && (
-          <StudentPortal currentUser={currentUser} database={database} />
+          <StudentPortal
+            currentUser={currentUser}
+            database={database}
+            controlledActiveTab={studentTab}
+            onTabChange={setStudentTab}
+            hideTopTabs={true}
+          />
         )}
 
         {/* FOCUSED ROLE 3: ADMINISTRATOR */}
@@ -871,6 +654,20 @@ function LMSApp() {
             )}
 
             {activeTab === 'print' && <AdminMonthlyReportPrint database={database} />}
+
+            {activeTab === 'rapor-pekanan' && (
+              <TutorWeeklyReportSender user={currentUser} database={database} />
+            )}
+
+            {activeTab === 'scan-gerbang' && (
+              <GateAttendanceMonitor
+                currentUser={currentUser}
+                database={database}
+                onOpenScannerModal={(mode) => openScannerWithMode(mode)}
+                refreshSignal={gateRefreshTick}
+                onDataSynced={reloadDatabase}
+              />
+            )}
 
             {activeTab === 'insight' && <AdminAIInsight database={database} />}
 
@@ -907,157 +704,7 @@ function LMSApp() {
           </>
         )}
       </main>
-
-      {/* Mobile-First Bottom Navigation Bar (Visible only on mobile) */}
-      <nav className="print:hidden md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-1 flex items-center justify-around shadow-lg">
-        {currentUser?.role === 'tutor' && (
-          <>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'dashboard' ? 'text-blue-600' : 'text-slate-500'
-              }`}
-            >
-              <LayoutDashboard className="w-5 h-5 mb-0.5" />
-              <span>Beranda</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('input')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'input' ? 'text-blue-600' : 'text-slate-500'
-              }`}
-            >
-              <PlusCircle className="w-5 h-5 mb-0.5" />
-              <span>Input</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('crud')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'crud' ? 'text-blue-600' : 'text-slate-500'
-              }`}
-            >
-              <History className="w-5 h-5 mb-0.5" />
-              <span>Riwayat</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('tugas')}
-              className={`flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold transition-all cursor-pointer ${
-                activeTab === 'tugas' ? 'text-blue-600 font-bold' : 'text-slate-500'
-              }`}
-            >
-              <FileCheck className="w-5 h-5 mb-0.5" />
-              <span>Tugas</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('cbt')}
-              className={`flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold transition-all cursor-pointer ${
-                activeTab === 'cbt' ? 'text-blue-600 font-bold' : 'text-slate-500'
-              }`}
-            >
-              <FileQuestion className="w-5 h-5 mb-0.5" />
-              <span>CBT</span>
-            </button>
-            <button
-              onClick={() => setShowScannerModal(true)}
-              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all cursor-pointer"
-              title="Scan QR / Barcode"
-            >
-              <QrCode className="w-5 h-5 mb-0.5 text-blue-600" />
-              <span>Scan</span>
-            </button>
-            <button
-              onClick={() => setShowSecurityModal(true)}
-              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all cursor-pointer"
-              title="Keamanan & Biometrik"
-            >
-              <Fingerprint className={`w-5 h-5 mb-0.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
-              <span>Biometrik</span>
-            </button>
-          </>
-        )}
-
-        {currentUser?.role === 'siswa' && (
-          <>
-            <button
-              onClick={() => setActiveTab('portal')}
-              className="flex flex-col items-center py-1 px-3 text-[10px] font-semibold text-blue-600"
-            >
-              <GraduationCap className="w-5 h-5 mb-0.5 text-blue-600" />
-              <span>Laporan Saya</span>
-            </button>
-            <button
-              onClick={() => setShowAuthModal(true)}
-              className="flex flex-col items-center py-1 px-3 text-[10px] font-semibold text-slate-500"
-            >
-              <Users className="w-5 h-5 mb-0.5 text-orange-500" />
-              <span>Ganti Siswa</span>
-            </button>
-            <button
-              onClick={() => setShowSheetsModal(true)}
-              className="flex flex-col items-center py-1 px-3 text-[10px] font-semibold text-slate-500"
-            >
-              <FileSpreadsheet className="w-5 h-5 mb-0.5 text-emerald-600" />
-              <span>Sheets</span>
-            </button>
-          </>
-        )}
-
-        {currentUser?.role === 'admin' && (
-          <>
-            <button
-              onClick={() => setActiveTab('monitoring')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'monitoring' ? 'text-blue-600' : 'text-slate-500'
-              }`}
-            >
-              <ShieldCheck className="w-5 h-5 mb-0.5" />
-              <span>Monitoring</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('print')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'print' ? 'text-blue-600' : 'text-slate-500'
-              }`}
-            >
-              <FileText className="w-5 h-5 mb-0.5" />
-              <span>Cetak</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('insight')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'insight' ? 'text-orange-500 font-bold' : 'text-slate-500'
-              }`}
-            >
-              <Sparkles className="w-5 h-5 mb-0.5 text-orange-500" />
-              <span>AI Insight</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('fee')}
-              className={`flex flex-col items-center py-1 px-2 text-[10px] font-semibold transition-all ${
-                activeTab === 'fee' ? 'text-emerald-600 font-bold' : 'text-slate-500'
-              }`}
-            >
-              <DollarSign className="w-5 h-5 mb-0.5 text-emerald-600" />
-              <span>Honor</span>
-            </button>
-            <button
-              onClick={() => setShowSecurityModal(true)}
-              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500 hover:text-blue-600 transition-all"
-              title="Keamanan & Biometrik"
-            >
-              <Fingerprint className={`w-5 h-5 mb-0.5 ${hasBiometric ? 'text-blue-600' : 'text-slate-500'}`} />
-              <span>Biometrik</span>
-            </button>
-            <button
-              onClick={() => setShowSheetsModal(true)}
-              className="flex flex-col items-center py-1 px-1.5 text-[10px] font-semibold text-slate-500"
-            >
-              <FileSpreadsheet className="w-5 h-5 mb-0.5" />
-              <span>Sheets</span>
-            </button>
-          </>
-        )}
-      </nav>
+      </div>
 
       {/* Auth Modal */}
       <AuthModal
@@ -1096,7 +743,13 @@ function LMSApp() {
         isOpen={showScannerModal}
         onClose={() => setShowScannerModal(false)}
         database={database}
+        currentUser={currentUser}
+        initialMode={scannerInitialMode}
         onAttendanceLogged={() => reloadDatabase()}
+        onGateScanComplete={() => {
+          setGateRefreshTick((t) => t + 1);
+          reloadDatabase();
+        }}
       />
     </div>
   );

@@ -174,12 +174,13 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
         return;
       }
       filename = `Riwayat_Absensi_${selectedClassFilter !== 'all' ? selectedClassFilter : 'SemuaKelas'}_${dateStr}.csv`;
-      headers = ['ID Absensi', 'Tanggal', 'ID Kelas', 'Nama Siswa', 'Status Kehadiran', 'ID Tutor', 'Waktu Input'];
+      headers = ['ID Absensi', 'Tanggal', 'ID Kelas', 'Nama Siswa', 'Materi Diajarkan', 'Status Kehadiran', 'ID Tutor', 'Waktu Input'];
       rows = filteredAbsensi.map((item) => [
         item.id_absensi,
         item.tanggal,
         item.id_kelas,
         item.siswa,
+        item.materi_diajarkan || '',
         item.status_kehadiran,
         item.id_tutor,
         item.timestamp,
@@ -190,13 +191,14 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
         return;
       }
       filename = `Riwayat_Nilai_${selectedClassFilter !== 'all' ? selectedClassFilter : 'SemuaKelas'}_${dateStr}.csv`;
-      headers = ['ID Nilai', 'Tanggal', 'ID Kelas', 'Nama Siswa', 'Mata Pelajaran', 'Jenis Penilaian', 'Nilai', 'Catatan', 'ID Tutor', 'Waktu Input'];
+      headers = ['ID Nilai', 'Tanggal', 'ID Kelas', 'Nama Siswa', 'Mata Pelajaran', 'Materi Diajarkan', 'Jenis Penilaian', 'Nilai', 'Catatan', 'ID Tutor', 'Waktu Input'];
       rows = filteredNilai.map((item) => [
         item.id_nilai,
         item.tanggal,
         item.id_kelas,
         item.siswa,
         item.mapel,
+        item.materi_diajarkan || '',
         item.jenis_penilaian,
         item.nilai,
         item.catatan || '',
@@ -349,6 +351,7 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
                     <th className="px-4 py-3 font-semibold">Tanggal</th>
                     <th className="px-4 py-3 font-semibold">Kelas</th>
                     <th className="px-4 py-3 font-semibold">Nama Siswa</th>
+                    <th className="px-4 py-3 font-semibold">Materi yang Diajarkan</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold text-right">Aksi</th>
                   </tr>
@@ -361,6 +364,9 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
                         <span className="font-semibold text-slate-800">{item.id_kelas}</span>
                       </td>
                       <td className="px-4 py-3 font-bold text-slate-900">{item.siswa}</td>
+                      <td className="px-4 py-3 text-xs text-slate-600 max-w-[220px] truncate" title={item.materi_diajarkan || '-'}>
+                        {item.materi_diajarkan || '-'}
+                      </td>
                       <td className="px-4 py-3">{getStatusBadge(item.status_kehadiran)}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1.5">
@@ -403,6 +409,7 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
                     <th className="px-4 py-3 font-semibold">Tanggal</th>
                     <th className="px-4 py-3 font-semibold">Siswa & Kelas</th>
                     <th className="px-4 py-3 font-semibold">Kategori Penilaian</th>
+                    <th className="px-4 py-3 font-semibold">Materi Diajarkan</th>
                     <th className="px-4 py-3 font-semibold">Nilai</th>
                     <th className="px-4 py-3 font-semibold">Catatan</th>
                     <th className="px-4 py-3 font-semibold text-right">Aksi</th>
@@ -419,6 +426,9 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
                       <td className="px-4 py-3 font-medium text-slate-800">
                         {item.jenis_penilaian}
                         <span className="block text-[11px] text-blue-600">{item.mapel}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-slate-600 max-w-[200px] truncate" title={item.materi_diajarkan || '-'}>
+                        {item.materi_diajarkan || '-'}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -510,6 +520,19 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
                 </select>
               </div>
 
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Materi yang Diajarkan</label>
+                <input
+                  type="text"
+                  value={editingAbsensi.materi_diajarkan || ''}
+                  onChange={(e) =>
+                    setEditingAbsensi({ ...editingAbsensi, materi_diajarkan: e.target.value })
+                  }
+                  placeholder="Topik / materi sesi KBM"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
@@ -587,6 +610,19 @@ export function TutorHistoryCrud({ user, database, onDataChanged }: TutorHistory
                   onChange={(e) =>
                     setEditingNilai({ ...editingNilai, jenis_penilaian: e.target.value })
                   }
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Materi yang Diajarkan</label>
+                <input
+                  type="text"
+                  value={editingNilai.materi_diajarkan || ''}
+                  onChange={(e) =>
+                    setEditingNilai({ ...editingNilai, materi_diajarkan: e.target.value })
+                  }
+                  placeholder="Topik / materi sesi KBM"
                   className="w-full rounded-xl border border-slate-300 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
                 />
               </div>

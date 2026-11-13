@@ -10,6 +10,9 @@ import { StudentAdabCharacterView } from '../adab/StudentAdabCharacterView';
 import { AssignmentHub } from '../assignment/AssignmentHub';
 import { VirtualClassroomHub } from '../virtual/VirtualClassroomHub';
 import { AnnouncementBulletinBoard } from '../announcement/AnnouncementBulletinBoard';
+import { StudentWeeklyReportsView } from './StudentWeeklyReportsView';
+import { StudentGateAttendanceView } from './StudentGateAttendanceView';
+import { GateAttendanceService } from '../../services/gateAttendanceService';
 import {
   User,
   Calendar,
@@ -45,16 +48,52 @@ import {
   FileCheck,
 } from 'lucide-react';
 
+export type StudentPortalTab =
+  | 'radar'
+  | 'mutabaah'
+  | 'cbt'
+  | 'tugas'
+  | 'virtual'
+  | 'maktabah'
+  | 'adab'
+  | 'kartu'
+  | 'jadwal'
+  | 'pengumuman'
+  | 'grafik'
+  | 'ekskul'
+  | 'harian'
+  | 'hadir-pulang'
+  | 'pekanan'
+  | 'bulanan';
+
 interface StudentPortalProps {
   currentUser: ActiveUser;
   database: DatabaseState;
   onSelectOtherStudent?: (studentName: string) => void;
+  controlledActiveTab?: StudentPortalTab;
+  onTabChange?: (tab: StudentPortalTab) => void;
+  hideTopTabs?: boolean;
 }
 
-export function StudentPortal({ currentUser, database, onSelectOtherStudent }: StudentPortalProps) {
-  // Tabs: 'radar' | 'mutabaah' | 'cbt' | 'tugas' | 'virtual' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'pengumuman' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'
-  const [activeTab, setActiveTab] = useState<'radar' | 'mutabaah' | 'cbt' | 'tugas' | 'virtual' | 'maktabah' | 'adab' | 'kartu' | 'jadwal' | 'pengumuman' | 'grafik' | 'ekskul' | 'harian' | 'bulanan'>('radar');
+export function StudentPortal({
+  currentUser,
+  database,
+  onSelectOtherStudent,
+  controlledActiveTab,
+  onTabChange,
+  hideTopTabs = false,
+}: StudentPortalProps) {
+  const [internalTab, setInternalTab] = useState<StudentPortalTab>('radar');
+  const activeTab = controlledActiveTab ?? internalTab;
+  const setActiveTab = (tab: StudentPortalTab) => {
+    setInternalTab(tab);
+    if (onTabChange) onTabChange(tab);
+  };
   const [selectedStudentName, setSelectedStudentName] = useState<string>(currentUser.name);
+
+  React.useEffect(() => {
+    setSelectedStudentName(currentUser.name);
+  }, [currentUser.name]);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
   const [reportModalTab, setReportModalTab] = useState<'rapor' | 'piagam' | 'whatsapp'>('rapor');
 
@@ -123,6 +162,14 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
 
     return { total, hadir, izin, sakit, alfa, rate };
   }, [studentAbsensi]);
+
+  // Status Scan Gerbang Hari Ini (Jam Hadir & Pulang untuk Orang Tua)
+  const todayGateLog = useMemo(() => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    return GateAttendanceService.getAllLogs().find(
+      (l) => l.tanggal === todayStr && l.siswa.toLowerCase().trim() === selectedStudentName.toLowerCase().trim()
+    );
+  }, [selectedStudentName]);
 
   // Metrik Nilai (KKM 85)
   const gradeStats = useMemo(() => {
@@ -488,8 +535,9 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           </div>
         </div>
 
-        {/* Navigation Tabs (Harmonized Blue, Orange, Green) */}
-        <div className="flex flex-wrap border-t border-slate-100 pt-3 gap-2">
+        {/* Navigation Tabs (Hidden when controlled by Left Sidebar) */}
+        {!hideTopTabs && (
+          <div className="flex flex-wrap border-t border-slate-100 pt-3 gap-2">
           <button
             onClick={() => setActiveTab('radar')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
@@ -657,7 +705,8 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             Rapor Bulanan
           </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Quick Status Cards (Updated KKM: 85) */}
@@ -702,6 +751,62 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
           </div>
         </div>
       </div>
+
+      {/* Live Gate Attendance Strip (Orang Tua melihat Jam Masuk & Jam Pulang Hari Ini secara langsung) */}
+      <div className="bg-gradient-to-r from-emerald-50 via-white to-orange-50 rounded-2xl border border-emerald-200/80 p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-black text-[11px] shadow-2xs">
+            <Clock className="w-3.5 h-3.5" />
+            <span>Status Gerbang Hari Ini</span>
+          </span>
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-semibold">Jam Hadir:</span>
+            <span className="font-mono font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-lg">
+              {todayGateLog?.jam_masuk ? `${todayGateLog.jam_masuk.slice(0, 5)} WIB` : 'Belum Scan'}
+            </span>
+            {todayGateLog?.status_masuk && (
+              <span className="text-[10px] font-bold text-slate-600">({todayGateLog.status_masuk})</span>
+            )}
+          </div>
+
+          <span className="text-slate-300 hidden sm:inline">|</span>
+
+          <div className="flex items-center gap-2">
+            <span className="text-slate-500 font-semibold">Jam Pulang:</span>
+            <span className="font-mono font-black text-orange-800 bg-orange-100 px-2.5 py-0.5 rounded-lg">
+              {todayGateLog?.jam_pulang
+                ? `${todayGateLog.jam_pulang.slice(0, 5)} WIB`
+                : todayGateLog?.jam_masuk
+                  ? 'Masih di Sekolah'
+                  : 'Menunggu'}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('hadir-pulang')}
+          className="py-1.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer transition-all shrink-0"
+        >
+          <span>Lihat Riwayat Hadir & Pulang</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {/* ============================================================== */}
+      {/* TAB: JAM HADIR & JAM PULANG ANAK (SCAN GERBANG & KELAS)        */}
+      {/* ============================================================== */}
+      {activeTab === 'hadir-pulang' && (
+        <StudentGateAttendanceView studentName={selectedStudentName} cabang={studentInfo.cabang} />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: RAPOR PEKANAN DARI GURU UNTUK ORANG TUA                  */}
+      {/* ============================================================== */}
+      {activeTab === 'pekanan' && (
+        <StudentWeeklyReportsView studentName={selectedStudentName} />
+      )}
 
       {/* ============================================================== */}
       {/* TAB: ANALISIS POTENSI 360° SANTRI (INTERACTIVE RADAR CHART)    */}
@@ -1557,13 +1662,18 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
                 {studentAbsensi.slice(0, 8).map((item) => (
                   <div
                     key={item.id_absensi}
-                    className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between hover:bg-slate-100/70 transition-colors"
+                    className="p-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between gap-2 hover:bg-slate-100/70 transition-colors"
                   >
-                    <div>
+                    <div className="min-w-0">
                       <div className="font-mono text-xs font-bold text-slate-900">{item.tanggal}</div>
                       <div className="text-[11px] text-slate-500">{item.id_kelas}</div>
+                      {item.materi_diajarkan && (
+                        <div className="text-[11px] text-blue-700 font-semibold mt-0.5 truncate">
+                          Materi: {item.materi_diajarkan}
+                        </div>
+                      )}
                     </div>
-                    <div>{getStatusBadge(item.status_kehadiran)}</div>
+                    <div className="shrink-0">{getStatusBadge(item.status_kehadiran)}</div>
                   </div>
                 ))}
               </div>
@@ -1595,6 +1705,11 @@ export function StudentPortal({ currentUser, database, onSelectOtherStudent }: S
                         <div className="text-[11px] text-indigo-700 font-medium">
                           {item.mapel} · {item.tanggal}
                         </div>
+                        {item.materi_diajarkan && (
+                          <div className="text-[11px] text-blue-700 font-semibold mt-0.5">
+                            Materi: {item.materi_diajarkan}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
                         <span
