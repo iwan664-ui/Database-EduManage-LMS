@@ -1,6 +1,13 @@
 import jsPDF from 'jspdf';
 import autoTable, { UserOptions } from 'jspdf-autotable';
-import { GateAttendanceLog, LogAbsensi, LogNilai, WeeklyReportItem } from '../types';
+import {
+  AcademicTermReportItem,
+  GateAttendanceLog,
+  LogAbsensi,
+  LogNilai,
+  StudentInvoiceItem,
+  WeeklyReportItem,
+} from '../types';
 
 export interface RecapRowData {
   siswa: string;
@@ -919,4 +926,283 @@ export class PdfExportService {
     this.drawFooterSignatures(doc, 'Penanggung Jawab Presensi Sekolah', printedBy);
     doc.save(`Laporan_Hadir_Pulang_Santri_${Date.now().toString().slice(-4)}.pdf`);
   }
+
+  /**
+   * 6. Cetak Kwitansi Pembayaran Resmi Divisi Keuangan
+   */
+  static exportInvoiceReceiptPdf(invoice: StudentInvoiceItem, printedBy = 'Divisi Keuangan / Bendahara'): void {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const startY = this.drawLetterhead(
+      doc,
+      'KWITANSI PEMBAYARAN RESMI SANTRI',
+      `No. Dokumen: ${invoice.id} · Dicetak: ${new Date().toLocaleDateString('id-ID')}`
+    );
+
+    const formatRp = (val: number) =>
+      new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      }).format(val || 0);
+
+    const net = Math.max(0, invoice.nominal - invoice.potongan);
+    const remaining = Math.max(0, net - invoice.terbayar);
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(203, 213, 225);
+    doc.roundedRect(14, startY, 182, 42, 2, 2, 'FD');
+
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Telah Diterima Dari (Wali / Santri):', 18, startY + 8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.siswa, 80, startY + 8);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Kampus / Cabang:', 18, startY + 15);
+    doc.setFont('helvetica', 'normal');
+    doc.text(invoice.cabang, 80, startY + 15);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Untuk Pembayaran:', 18, startY + 22);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${invoice.judul} (${invoice.periode})`, 80, startY + 22);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tagihan Bersih / Terbayar:', 18, startY + 29);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${formatRp(net)}  |  Terbayar: ${formatRp(invoice.terbayar)}`, 80, startY + 29);
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Status & Sisa Tagihan:', 18, startY + 36);
+    doc.setTextColor(remaining === 0 ? 16 : 180, remaining === 0 ? 120 : 83, remaining === 0 ? 80 : 9);
+    doc.text(`${invoice.status.toUpperCase()} (Sisa: ${formatRp(remaining)})`, 80, startY + 36);
+
+    const paymentRows = invoice.riwayat_bayar.map((p, idx) => [
+      String(idx + 1),
+      p.tanggal,
+      p.metode,
+      p.referensi,
+      formatRp(p.jumlah),
+      p.dicatat_oleh,
+    ]);
+
+    autoTable(doc, {
+      startY: startY + 48,
+      head: [['No', 'Tanggal', 'Metode Pembayaran', 'No. Referensi', 'Nominal', 'Petugas']],
+      body:
+        paymentRows.length > 0
+          ? paymentRows
+          : [['1', '-', 'Belum ada riwayat transaksi masuk', '-', 'Rp 0', '-']],
+      theme: 'grid',
+      headStyles: { fillColor: [30, 64, 175], textColor: [255, 255, 255], fontSize: 8 },
+      styles: { fontSize: 8, cellPadding: 2.5 },
+    });
+
+    this.drawFooterSignatures(doc, 'Kepala Divisi Keuangan', printedBy);
+    doc.save(`Kwitansi_${invoice.id}_${invoice.siswa.replace(/\s+/g, '_')}.pdf`);
+  }
+
+  /**
+   * 7. Cetak Laporan Rekapitulasi Penagihan Divisi Keuangan
+   */
+  static exportFinanceSummaryPdf(
+    invoices: StudentInvoiceItem[],
+    printedBy = 'Divisi Keuangan / Bendahara'
+  ): void {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const startY = this.drawLetterhead(
+      doc,
+      'LAPORAN REKAPITULASI TAGIHAN & PENERIMAAN SISWA AKTIF',
+      `Total ${invoices.length} Tagihan · Dicetak pada ${new Date().toLocaleString('id-ID')}`
+    );
+
+    const formatRp = (val: number) =>
+      new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+      }).format(val || 0);
+
+    const body = invoices.map((inv, idx) => {
+      const net = Math.max(0, inv.nominal - inv.potongan);
+      const rem = Math.max(0, net - inv.terbayar);
+      return [
+        String(idx + 1),
+        inv.id,
+        inv.siswa,
+        inv.cabang,
+        `${inv.kategori} (${inv.periode})`,
+        formatRp(net),
+        formatRp(inv.terbayar),
+        formatRp(rem),
+        inv.jatuh_tempo,
+        inv.status,
+      ];
+    });
+
+    autoTable(doc, {
+      startY,
+      head: [
+        [
+          'No',
+          'No. Tagihan',
+          'Nama Santri',
+          'Kampus',
+          'Kategori & Periode',
+          'Tagihan Bersih',
+          'Terbayar',
+          'Sisa Tunggakan',
+          'Jatuh Tempo',
+          'Status',
+        ],
+      ],
+      body,
+      theme: 'grid',
+      headStyles: { fillColor: [5, 150, 105], textColor: [255, 255, 255], fontSize: 7.5 },
+      styles: { fontSize: 7.2, cellPadding: 2 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+    });
+
+    this.drawFooterSignatures(doc, 'Kepala Sekolah', printedBy);
+    doc.save(`Laporan_Keuangan_Siswa_Aktif_${new Date().toISOString().split('T')[0]}.pdf`);
+  }
+
+  // ==========================================
+  // 8. EXPORT RAPOR TENGAH SEMESTER (PTS) & RAPOR SEMESTER (PAS/PAT)
+  // ==========================================
+  static exportTermReportPdf(report: AcademicTermReportItem): void {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const isPts = report.jenis_rapor === 'Tengah Semester';
+
+    const startY = this.drawLetterhead(
+      doc,
+      isPts
+        ? 'LAPORAN HASIL BELAJAR TENGAH SEMESTER (PTS)'
+        : 'LAPORAN HASIL BELAJAR AKHIR SEMESTER (PAS/PAT)',
+      `Semester ${report.semester} · Tahun Ajaran ${report.tahun_ajaran} · Standar KKM 85`
+    );
+
+    const metaY = this.drawMetadataBox(doc, startY, [
+      { label: 'Nama Santri', value: report.siswa },
+      { label: 'Kelas / Kampus', value: `${report.kelas_utama} · ${report.cabang}` },
+      { label: 'Semester / TA', value: `${report.semester} / ${report.tahun_ajaran}` },
+      { label: 'Wali Kelas', value: report.wali_kelas },
+      {
+        label: 'Capaian Umum',
+        value: `Rata-rata: ${report.rata_rata_umum} | Ketuntasan KKM 85: ${report.persen_ketuntasan}% | Kehadiran: ${report.persen_kehadiran}%`,
+      },
+    ]);
+
+    const examColLabel = isPts ? 'Nilai PTS' : 'Nilai PAS';
+
+    autoTable(doc, {
+      startY: metaY + 2,
+      head: [
+        [
+          'No',
+          'Mata Pelajaran',
+          'Harian',
+          examColLabel,
+          'Nilai Akhir',
+          'Predikat',
+          'KKM 85',
+          'Deskripsi Capaian Kompetensi',
+        ],
+      ],
+      body: report.daftar_nilai.map((d, idx) => [
+        String(idx + 1),
+        `${d.mapel}\n(${d.guru})`,
+        String(d.nilai_harian),
+        String(d.nilai_ujian),
+        String(d.nilai_akhir),
+        d.predikat,
+        d.tuntas_kkm ? 'Tuntas' : 'Remedial',
+        d.capaian_kompetensi || '-',
+      ]),
+      theme: 'grid',
+      headStyles: {
+        fillColor: isPts ? [234, 88, 12] : [30, 64, 175],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 7.5,
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 7.3,
+        cellPadding: 2.2,
+        textColor: [30, 41, 59],
+        valign: 'middle',
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 8 },
+        1: { fontStyle: 'bold', cellWidth: 38 },
+        2: { halign: 'center', cellWidth: 14 },
+        3: { halign: 'center', cellWidth: 16 },
+        4: { halign: 'center', fontStyle: 'bold', cellWidth: 17 },
+        5: { halign: 'center', fontStyle: 'bold', cellWidth: 14 },
+        6: { halign: 'center', fontStyle: 'bold', cellWidth: 18 },
+        7: { cellWidth: pageWidth - 28 - 125 },
+      },
+      didParseCell: (data) => {
+        if (data.section === 'body' && data.column.index === 6) {
+          const val = String(data.cell.raw);
+          if (val === 'Tuntas') {
+            data.cell.styles.textColor = [5, 150, 105];
+            data.cell.styles.fillColor = [236, 253, 245];
+          } else {
+            data.cell.styles.textColor = [225, 29, 72];
+            data.cell.styles.fillColor = [255, 241, 242];
+          }
+        }
+      },
+    });
+
+    const afterGradesY = ((doc as any).lastAutoTable?.finalY || metaY + 35) + 5;
+
+    autoTable(doc, {
+      startY: afterGradesY,
+      head: [['Aspek Non-Akademik, Tahfidz & Kehadiran', 'Keterangan & Evaluasi']],
+      body: [
+        ['Capaian Tahfidz Al-Qur\'an', report.tahfidz_capaian],
+        ['Predikat Adab & Akhlak', report.adab_predikat],
+        ['Ekstrakurikuler & Pengembangan Diri', report.ekskul_catatan],
+        [
+          'Rekapitulasi Ketidakhadiran',
+          `Sakit: ${report.sakit} hari  |  Izin: ${report.izin} hari  |  Tanpa Keterangan (Alfa): ${report.alfa} hari  |  Persentase Hadir: ${report.persen_kehadiran}%`,
+        ],
+        ['Catatan Wali Kelas', report.catatan_wali_kelas],
+        ['Keputusan Akademik', report.keputusan_akademik],
+      ],
+      theme: 'grid',
+      headStyles: {
+        fillColor: [15, 23, 42],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        fontSize: 8,
+      },
+      styles: {
+        fontSize: 7.8,
+        cellPadding: 2.6,
+        textColor: [30, 41, 59],
+        valign: 'top',
+      },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 58, fillColor: [248, 250, 252] },
+        1: { cellWidth: pageWidth - 28 - 58 },
+      },
+    });
+
+    this.drawFooterSignatures(doc, 'Wali Kelas', report.wali_kelas || 'Wali Kelas');
+
+    const safeName = report.siswa.replace(/[^a-zA-Z0-9]+/g, '_');
+    const tag = isPts ? 'PTS' : 'Semester';
+    doc.save(`Rapor_${tag}_${safeName}_${report.semester}_${report.tahun_ajaran.replace('/', '-')}.pdf`);
+  }
 }
+

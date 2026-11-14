@@ -4,6 +4,7 @@ import { useToast } from '../Toast';
 import { StudentReportModal } from '../student/StudentReportModal';
 import { PdfExportService } from '../../services/pdfExportService';
 import { SecurityService } from '../../services/securityService';
+import { AdminLearningStatsSummary } from './AdminLearningStatsSummary';
 import {
   Users,
   GraduationCap,
@@ -23,11 +24,29 @@ import {
   RotateCcw,
   Award,
   QrCode,
+  CalendarClock,
+  UserPlus,
+  HeartHandshake,
+  Wallet,
+  Laptop,
 } from 'lucide-react';
 
 interface AdminMonitoringProps {
   database: DatabaseState;
-  onNavigateTab: (tab: 'print' | 'insight' | 'fee' | 'settings' | 'scan-gerbang') => void;
+  onNavigateTab: (
+    tab:
+      | 'print'
+      | 'insight'
+      | 'fee'
+      | 'settings'
+      | 'scan-gerbang'
+      | 'kurikulum-jadwal'
+      | 'kurikulum-siswa'
+      | 'konseling-admin'
+      | 'keuangan-divisi'
+      | 'inventaris-aset'
+      | 'direktori-alumni'
+  ) => void;
 }
 
 export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProps) {
@@ -166,6 +185,19 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
     selectedKelas !== 'all' ||
     selectedMapel !== 'all' ||
     selectedGuru !== 'all';
+
+  const activeScopeLabel = useMemo(() => {
+    const parts: string[] = [];
+    if (selectedCabang !== 'all') parts.push(selectedCabang);
+    if (selectedKelas !== 'all') {
+      const k = classMap.get(selectedKelas);
+      parts.push(k ? k.kelas : selectedKelas);
+    }
+    if (selectedMapel !== 'all') parts.push(selectedMapel);
+    if (selectedGuru !== 'all') parts.push(`Guru: ${selectedGuru}`);
+    if (q) parts.push(`Cari: "${searchQuery.trim()}"`);
+    return parts.length > 0 ? parts.join(' · ') : 'Seluruh Kampus & Kelas';
+  }, [selectedCabang, selectedKelas, selectedMapel, selectedGuru, q, searchQuery, classMap]);
 
   const resetAllFilters = () => {
     setSearchQuery('');
@@ -318,11 +350,32 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
 
           <div className="flex flex-wrap gap-2.5">
             <button
+              onClick={() => onNavigateTab('kurikulum-jadwal')}
+              className="py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <CalendarClock className="w-4 h-4" />
+              Jadwal &amp; Kelas Guru
+            </button>
+            <button
+              onClick={() => onNavigateTab('kurikulum-siswa')}
+              className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              Siswa Masuk / Keluar
+            </button>
+            <button
+              onClick={() => onNavigateTab('konseling-admin')}
+              className="py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <HeartHandshake className="w-4 h-4" />
+              Izin &amp; Konseling
+            </button>
+            <button
               onClick={() => onNavigateTab('scan-gerbang')}
               className="py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <QrCode className="w-4 h-4" />
-              Scan Hadir & Pulang
+              Scan Hadir &amp; Pulang
             </button>
             <button
               onClick={() => onNavigateTab('print')}
@@ -333,17 +386,38 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
             </button>
             <button
               onClick={() => onNavigateTab('insight')}
-              className="py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5"
+              className="py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               Auto AI Insight
             </button>
             <button
+              onClick={() => onNavigateTab('keuangan-divisi')}
+              className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-extrabold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Wallet className="w-4 h-4" />
+              Divisi Keuangan &amp; SPP
+            </button>
+            <button
               onClick={() => onNavigateTab('fee')}
-              className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5"
+              className="py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <DollarSign className="w-4 h-4" />
               Rekap Honor Tutor
+            </button>
+            <button
+              onClick={() => onNavigateTab('inventaris-aset')}
+              className="py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Laptop className="w-4 h-4" />
+              Inventaris Aset
+            </button>
+            <button
+              onClick={() => onNavigateTab('direktori-alumni')}
+              className="py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <GraduationCap className="w-4 h-4" />
+              Direktori Alumni
             </button>
           </div>
         </div>
@@ -396,6 +470,17 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
           </div>
         </div>
       </div>
+
+      {/* Ringkasan Statistik Pembelajaran (Gemini AI Auto Summary Cards) */}
+      <AdminLearningStatsSummary
+        filteredStudents={filteredStudents}
+        filteredAbsensi={filteredAbsensi}
+        filteredNilai={filteredNilai}
+        classMap={classMap}
+        scopeLabel={activeScopeLabel}
+        isAnyFilterActive={isAnyFilterActive}
+        onResetFilters={resetAllFilters}
+      />
 
       {/* Global Search and Filter Bar */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">

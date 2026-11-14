@@ -7,7 +7,9 @@ interface TutorDashboardProps {
   user: ActiveUser;
   database: DatabaseState;
   onSelectClassForInput: (kelasId: string) => void;
-  onNavigateTab: (tab: 'input' | 'crud' | 'rekap' | 'rapor-pekanan' | 'scan-gerbang') => void;
+  onNavigateTab: (
+    tab: 'input' | 'crud' | 'rekap' | 'rapor-pekanan' | 'scan-gerbang' | 'jadwal-guru' | 'konseling-guru'
+  ) => void;
 }
 
 export function TutorDashboard({
@@ -41,7 +43,7 @@ export function TutorDashboard({
     <div className="space-y-6">
       {/* Hero Welcome Banner */}
       <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
-        <div className="relative z-10 max-w-2xl space-y-3">
+        <div className="relative z-10 max-w-3xl space-y-3">
           <div className="flex items-center gap-2 text-xs text-blue-300 font-medium">
             <span>AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY</span>
             <span aria-hidden="true">·</span>
@@ -63,14 +65,21 @@ export function TutorDashboard({
           <div className="flex flex-wrap gap-2.5 pt-3">
             <button
               onClick={() => onNavigateTab('input')}
-              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2"
+              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Input Presensi & Nilai</span>
             </button>
             <button
+              onClick={() => onNavigateTab('jadwal-guru')}
+              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Jadwal & Kelas Saya</span>
+            </button>
+            <button
               onClick={() => onNavigateTab('rekap')}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2"
+              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
             >
               <BarChart3 className="w-4 h-4" />
               <span>Rekapitulasi Kelas</span>
@@ -88,6 +97,13 @@ export function TutorDashboard({
             >
               <SendHorizontal className="w-4 h-4" />
               <span>Kirim Rapor Pekanan Ortu</span>
+            </button>
+            <button
+              onClick={() => onNavigateTab('konseling-guru')}
+              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Award className="w-4 h-4" />
+              <span>Izin & Konseling Santri</span>
             </button>
             <button
               onClick={() => onNavigateTab('crud')}

@@ -27,7 +27,7 @@ interface AuthModalProps {
   initialRole?: 'tutor' | 'siswa' | 'admin';
 }
 
-const ADMIN_PRESETS = ['Super Admin Akademik', 'Kepala Sekolah', 'Koordinator Kurikulum'];
+const ADMIN_PRESETS = ['Super Admin Akademik', 'Kepala Sekolah', 'Koordinator Kurikulum', 'Divisi Keuangan / Bendahara'];
 
 export function AuthModal({ isOpen, database, onLogin, onClose, initialRole = 'tutor' }: AuthModalProps) {
   const { showToast } = useToast();

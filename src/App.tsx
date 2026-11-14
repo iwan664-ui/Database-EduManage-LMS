@@ -15,7 +15,9 @@ import { TutorDashboard } from './components/tutor/TutorDashboard';
 import { TutorInputForm } from './components/tutor/TutorInputForm';
 import { TutorHistoryCrud } from './components/tutor/TutorHistoryCrud';
 import { TutorRecapView } from './components/tutor/TutorRecapView';
-import { TutorWeeklyReportSender } from './components/tutor/TutorWeeklyReportSender';
+import { TutorScheduleView } from './components/tutor/TutorScheduleView';
+import { TutorCounselingLeaveHub } from './components/tutor/TutorCounselingLeaveHub';
+import { AcademicTermReportCenter } from './components/academic/AcademicTermReportCenter';
 
 // Student Component
 import { StudentPortal, StudentPortalTab } from './components/student/StudentPortal';
@@ -25,6 +27,11 @@ import { AdminMonitoring } from './components/admin/AdminMonitoring';
 import { AdminMonthlyReportPrint } from './components/admin/AdminMonthlyReportPrint';
 import { AdminAIInsight } from './components/admin/AdminAIInsight';
 import { AdminTutorFeeReport } from './components/admin/AdminTutorFeeReport';
+import { AdminCurriculumSchedule } from './components/admin/AdminCurriculumSchedule';
+import { AdminStudentLifecycle } from './components/admin/AdminStudentLifecycle';
+import { AdminFinanceDivision } from './components/admin/AdminFinanceDivision';
+import { AdminAssetInventory } from './components/admin/AdminAssetInventory';
+import { AdminAlumniDirectory } from './components/admin/AdminAlumniDirectory';
 
 // New Advanced Modules
 import { CbtExamEngine } from './components/cbt/CbtExamEngine';
@@ -283,7 +290,12 @@ function LMSApp() {
       setActiveTab('portal');
       setStudentTab('radar');
     } else if (user.role === 'admin') {
-      setActiveTab('monitoring');
+      const lowerName = user.name.toLowerCase();
+      if (lowerName.includes('keuangan') || lowerName.includes('bendahara')) {
+        setActiveTab('keuangan-divisi');
+      } else {
+        setActiveTab('monitoring');
+      }
     }
 
     showToast(`Selamat Datang, ${user.name}!`, `Masuk sebagai ${user.role.toUpperCase()}`, 'success');
@@ -728,7 +740,46 @@ function LMSApp() {
             )}
 
             {activeTab === 'rapor-pekanan' && (
-              <TutorWeeklyReportSender user={currentUser} database={database} />
+              <AcademicTermReportCenter
+                user={currentUser}
+                database={database}
+                initialTab="pekanan"
+              />
+            )}
+
+            {activeTab === 'rapor-tengah-semester' && (
+              <AcademicTermReportCenter
+                user={currentUser}
+                database={database}
+                initialTab="tengah-semester"
+              />
+            )}
+
+            {activeTab === 'rapor-semester' && (
+              <AcademicTermReportCenter
+                user={currentUser}
+                database={database}
+                initialTab="semester"
+              />
+            )}
+
+            {activeTab === 'jadwal-guru' && (
+              <TutorScheduleView
+                user={currentUser}
+                database={database}
+                onSelectClassForInput={(id) => {
+                  setSelectedClassId(id);
+                  setActiveTab('input');
+                }}
+              />
+            )}
+
+            {activeTab === 'konseling-guru' && (
+              <TutorCounselingLeaveHub
+                user={currentUser}
+                database={database}
+                onDatabaseUpdated={reloadDatabase}
+              />
             )}
 
             {activeTab === 'scan-gerbang' && (
@@ -799,7 +850,51 @@ function LMSApp() {
             {activeTab === 'print' && <AdminMonthlyReportPrint database={database} />}
 
             {activeTab === 'rapor-pekanan' && (
-              <TutorWeeklyReportSender user={currentUser} database={database} />
+              <AcademicTermReportCenter
+                user={currentUser}
+                database={database}
+                initialTab="pekanan"
+              />
+            )}
+
+            {activeTab === 'rapor-tengah-semester' && (
+              <AcademicTermReportCenter
+                user={currentUser}
+                database={database}
+                initialTab="tengah-semester"
+              />
+            )}
+
+            {activeTab === 'rapor-semester' && (
+              <AcademicTermReportCenter
+                user={currentUser}
+                database={database}
+                initialTab="semester"
+              />
+            )}
+
+            {activeTab === 'kurikulum-jadwal' && (
+              <AdminCurriculumSchedule
+                database={database}
+                currentUser={currentUser}
+                onDatabaseUpdated={reloadDatabase}
+              />
+            )}
+
+            {activeTab === 'kurikulum-siswa' && (
+              <AdminStudentLifecycle
+                database={database}
+                currentUser={currentUser}
+                onDatabaseUpdated={reloadDatabase}
+              />
+            )}
+
+            {activeTab === 'konseling-admin' && (
+              <TutorCounselingLeaveHub
+                user={currentUser}
+                database={database}
+                onDatabaseUpdated={reloadDatabase}
+              />
             )}
 
             {activeTab === 'scan-gerbang' && (
@@ -809,6 +904,26 @@ function LMSApp() {
                 onOpenScannerModal={(mode) => openScannerWithMode(mode)}
                 refreshSignal={gateRefreshTick}
                 onDataSynced={reloadDatabase}
+              />
+            )}
+
+            {activeTab === 'keuangan-divisi' && (
+              <AdminFinanceDivision database={database} currentUser={currentUser} />
+            )}
+
+            {activeTab === 'inventaris-aset' && (
+              <AdminAssetInventory
+                database={database}
+                currentUser={currentUser}
+                onOpenSheetsSetup={() => setShowSheetsModal(true)}
+              />
+            )}
+
+            {activeTab === 'direktori-alumni' && (
+              <AdminAlumniDirectory
+                database={database}
+                currentUser={currentUser}
+                onOpenSheetsSetup={() => setShowSheetsModal(true)}
               />
             )}
 

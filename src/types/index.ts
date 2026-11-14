@@ -395,4 +395,316 @@ export interface GateScheduleConfig {
   lokasiDefault: string;
 }
 
+// Kurikulum & Kesiswaan: Riwayat Siswa Masuk / Keluar / Pindah Kelas
+export type StudentMutationType = 'Masuk' | 'Keluar' | 'Pindah Kelas' | 'Aktif Kembali';
+
+export interface StudentMutationRecord {
+  id: string;
+  siswa: string;
+  email_siswa: string;
+  cabang: string;
+  jenis: StudentMutationType;
+  tanggal: string; // YYYY-MM-DD
+  kelas_terkait: string[];
+  alasan: string;
+  diproses_oleh: string;
+  timestamp: string;
+}
+
+// Pengajuan Izin / Sakit Online dari Santri & Wali Murid
+export interface StudentLeaveRequest {
+  id: string;
+  siswa: string;
+  cabang: string;
+  tanggal_mulai: string; // YYYY-MM-DD
+  tanggal_selesai: string; // YYYY-MM-DD
+  jenis: 'Izin' | 'Sakit';
+  alasan: string;
+  nama_wali: string;
+  kontak_wali: string;
+  status: 'Menunggu' | 'Disetujui' | 'Ditolak';
+  ditanggapi_oleh?: string;
+  catatan_guru?: string;
+  created_at: string;
+}
+
+// Catatan Konseling & Pembinaan Guru / Wali Kelas
+export interface TeacherCounselingNote {
+  id: string;
+  siswa: string;
+  guru: string;
+  tanggal: string; // YYYY-MM-DD
+  kategori: 'Akademik (KKM 85)' | 'Kehadiran' | 'Adab & Karakter' | 'Apresiasi Prestasi';
+  catatan: string;
+  tindak_lanjut: string;
+}
+
+// Portofolio Prestasi & Penghargaan Santri
+export interface StudentAchievementItem {
+  id: string;
+  siswa: string;
+  judul: string;
+  kategori: "Tahfidz & Al-Qur'an" | 'Sains & Akademik' | 'Olahraga & Seni' | 'Kepemimpinan & Adab';
+  tingkat: 'Sekolah' | 'Kota/Kabupaten' | 'Provinsi' | 'Nasional' | 'Internasional';
+  peringkat: string;
+  tanggal: string; // YYYY-MM-DD
+  penyelenggara: string;
+  terverifikasi: boolean;
+}
+
+// Divisi Keuangan & Penagihan Siswa Aktif
+export type StudentBillingCategory =
+  | 'SPP Bulanan'
+  | 'Uang Pangkal / Pengembangan'
+  | 'Buku & Modul'
+  | 'Kegiatan & Ekskul'
+  | 'Munaqasyah Tahfidz'
+  | 'Lainnya';
+
+export type StudentInvoiceStatus =
+  | 'Belum Bayar'
+  | 'Sebagian'
+  | 'Menunggu Verifikasi'
+  | 'Lunas'
+  | 'Jatuh Tempo';
+
+export type PaymentMethodType =
+  | 'Transfer Bank BSI'
+  | 'Virtual Account'
+  | 'QRIS Sekolah'
+  | 'Tunai Loket';
+
+export interface StudentPaymentHistoryItem {
+  id: string;
+  tanggal: string; // YYYY-MM-DD
+  jumlah: number;
+  metode: PaymentMethodType;
+  referensi: string;
+  dicatat_oleh: string;
+}
+
+export interface StudentPaymentConfirmation {
+  metode: PaymentMethodType;
+  tanggal_bayar: string;
+  nominal_bayar: number;
+  referensi: string;
+  pengirim: string;
+  catatan?: string;
+}
+
+export interface StudentInvoiceItem {
+  id: string;
+  siswa: string;
+  cabang: string;
+  kategori: StudentBillingCategory;
+  periode: string; // e.g. "November 2026"
+  judul: string;
+  nominal: number;
+  potongan: number;
+  terbayar: number;
+  jatuh_tempo: string; // YYYY-MM-DD
+  status: StudentInvoiceStatus;
+  catatan_keuangan?: string;
+  bukti_konfirmasi?: StudentPaymentConfirmation;
+  riwayat_bayar: StudentPaymentHistoryItem[];
+  dibuat_pada: string;
+  dibuat_oleh: string;
+}
+
+export type SchoolExpenseCategory =
+  | 'Honor Guru & Staff'
+  | 'Operasional & Utilitas'
+  | 'Sarana & Prasarana'
+  | 'Kegiatan Santri'
+  | 'Lainnya';
+
+export interface SchoolExpenseItem {
+  id: string;
+  tanggal: string; // YYYY-MM-DD
+  kategori: SchoolExpenseCategory;
+  deskripsi: string;
+  nominal: number;
+  dicatat_oleh: string;
+}
+
+// Manajemen Inventaris Aset & Peminjaman Perangkat Sekolah
+export type AssetCategory =
+  | 'Laptop & Komputer'
+  | 'Proyektor & Audio'
+  | 'Tablet & Smartboard'
+  | 'Perangkat Jaringan & CBT'
+  | 'Alat Lab Sains'
+  | 'Lainnya';
+
+export type AssetCondition = 'Baik' | 'Perlu Perawatan' | 'Rusak Ringan' | 'Rusak Berat';
+
+export type AssetLoanStatus = 'Tersedia' | 'Dipinjam' | 'Dalam Perawatan';
+
+export type AssetBorrowerRole = 'Guru / Staff' | 'Santri' | 'Unit Kelas';
+
+export interface AssetLoanHistoryItem {
+  id: string;
+  peminjam: string;
+  peran_peminjam: AssetBorrowerRole;
+  tanggal_pinjam: string;
+  rencana_kembali: string;
+  tanggal_kembali?: string;
+  keperluan: string;
+  kondisi_kembali?: AssetCondition;
+  dicatat_oleh: string;
+}
+
+export interface SchoolAssetItem {
+  id: string;
+  kode_inventaris: string;
+  nama_perangkat: string;
+  kategori: AssetCategory;
+  nomor_seri: string;
+  lokasi_kampus: string;
+  ruangan: string;
+  kondisi: AssetCondition;
+  status_peminjaman: AssetLoanStatus;
+  peminjam_aktif?: string;
+  peran_peminjam?: AssetBorrowerRole;
+  tanggal_pinjam?: string;
+  rencana_kembali?: string;
+  keperluan_pinjam?: string;
+  tanggal_perolehan: string;
+  catatan?: string;
+  riwayat_pinjam: AssetLoanHistoryItem[];
+  synced_to_sheets?: boolean;
+  updated_at: string;
+}
+
+// Rapor Tengah Semester (PTS) & Rapor Semester (PAS/PAT)
+export type AcademicReportPeriodType = 'Tengah Semester' | 'Semester';
+export type AcademicSemesterType = 'Ganjil' | 'Genap';
+
+export interface AcademicTermSubjectScore {
+  id_kelas: string;
+  mapel: string;
+  guru: string;
+  nilai_harian: number;
+  nilai_ujian: number;
+  nilai_akhir: number;
+  predikat: 'A' | 'B' | 'C' | 'D';
+  tuntas_kkm: boolean;
+  capaian_kompetensi: string;
+}
+
+export interface AcademicTermReportItem {
+  id: string;
+  jenis_rapor: AcademicReportPeriodType;
+  semester: AcademicSemesterType;
+  tahun_ajaran: string;
+  tanggal_rapor: string;
+  siswa: string;
+  kelas_utama: string;
+  cabang: string;
+  wali_kelas: string;
+  bobot_harian_persen: number;
+  bobot_ujian_persen: number;
+  daftar_nilai: AcademicTermSubjectScore[];
+  rata_rata_umum: number;
+  persen_ketuntasan: number;
+  sakit: number;
+  izin: number;
+  alfa: number;
+  persen_kehadiran: number;
+  tahfidz_capaian: string;
+  adab_predikat: 'Sangat Baik' | 'Baik' | 'Cukup';
+  ekskul_catatan: string;
+  catatan_wali_kelas: string;
+  keputusan_akademik: string;
+  status_publikasi: 'Draf' | 'Diterbitkan ke Ortu' | 'Dibaca Orang Tua';
+  diterbitkan_pada?: string;
+  dibaca_pada?: string;
+}
+
+// Ringkasan Statistik Pembelajaran (Admin Dashboard Gemini AI Summary)
+export type LearningStatsSummaryStatus = 'Optimal' | 'Perlu Pantauan' | 'Kritis';
+
+export interface LearningStatsSummaryCard {
+  title: string;
+  metricHighlight: string;
+  status: LearningStatsSummaryStatus;
+  summary: string;
+}
+
+export interface LearningStatsSummaryResult {
+  headline: string;
+  executiveSummary: string;
+  attendanceCard: LearningStatsSummaryCard;
+  gradeCard: LearningStatsSummaryCard;
+  correlationCard: {
+    title: string;
+    summary: string;
+    actionItems: string[];
+  };
+  keyFindings: string[];
+  generatedAt?: string;
+}
+
+// Direktori Alumni & Jejaring Sekolah (Terintegrasi Google Sheets)
+export type AlumniContactStatus =
+  | 'Aktif Terhubung'
+  | 'Perlu Verifikasi'
+  | 'Menunggu Respon'
+  | 'Nomor Tidak Aktif';
+
+export type AlumniCareerSector =
+  | 'Mahasiswa / Studi Lanjut'
+  | 'Teknologi & IT'
+  | 'Kesehatan & Kedokteran'
+  | 'Pendidikan & Dakwah'
+  | 'Bisnis & Wirausaha'
+  | 'Keuangan & Hukum'
+  | 'Lainnya';
+
+export type AlumniAdmissionPath =
+  | 'SNBP'
+  | 'SNBT / UTBK'
+  | 'Seleksi Mandiri'
+  | 'Beasiswa Internasional / Timur Tengah'
+  | 'Kedinasan / Ikatan Dinas'
+  | 'Beasiswa Prestasi / Tahfidz'
+  | 'Lainnya';
+
+export type AlumniUniversityCategory =
+  | 'Perguruan Tinggi Negeri'
+  | 'Perguruan Tinggi Swasta'
+  | 'Perguruan Tinggi Malaysia'
+  | 'Perguruan Tinggi Timur Tengah'
+  | 'Perguruan Tinggi Luar Negeri Lainnya';
+
+export interface AlumniRecord {
+  id: string;
+  nis_alumni: string;
+  nama: string;
+  tahun_masuk: number;
+  tahun_lulus: number;
+  angkatan: string;
+  kampus_asal: string;
+  kelas_terakhir: string;
+  kampus_diterima: string;
+  kategori_perguruan_tinggi?: AlumniUniversityCategory;
+  tahun_diterima: number;
+  jurusan_diterima: string;
+  jalur_masuk_kampus: AlumniAdmissionPath;
+  sektor_karier: AlumniCareerSector;
+  profesi_saat_ini: string;
+  instansi_atau_kampus: string;
+  kota_domisili: string;
+  status_kontak: AlumniContactStatus;
+  telepon_wa: string;
+  email: string;
+  linkedin_url?: string;
+  terakhir_dihubungi?: string;
+  bersedia_mentoring: boolean;
+  catatan?: string;
+  synced_to_sheets?: boolean;
+  updated_at: string;
+}
+
+
 

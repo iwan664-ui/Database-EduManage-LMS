@@ -99,6 +99,10 @@ function doGet(e) {
       result = { success: true, message: 'Google Sheets Apps Script API Online', timestamp: new Date().toISOString() };
     } else if (action === 'getInitData') {
       result = getCompleteDatabase(ss);
+    } else if (action === 'getAssets') {
+      result = { success: true, assets: readSheetObjects(ss, 'inventaris_aset') };
+    } else if (action === 'getAlumni') {
+      result = { success: true, alumni: readSheetObjects(ss, 'direktori_alumni') };
     } else if (action === 'setupSheets') {
       result = initializeDatabaseSheets(ss);
     } else {
@@ -132,6 +136,14 @@ function doPost(e) {
       result = updateSingleNilai(ss, postData.data);
     } else if (action === 'deleteNilai') {
       result = deleteSingleNilai(ss, postData.id_nilai);
+    } else if (action === 'getAssets') {
+      result = { success: true, assets: readSheetObjects(ss, 'inventaris_aset') };
+    } else if (action === 'syncAssets') {
+      result = syncInventarisAset(ss, postData.assets || []);
+    } else if (action === 'getAlumni') {
+      result = { success: true, alumni: readSheetObjects(ss, 'direktori_alumni') };
+    } else if (action === 'syncAlumni') {
+      result = syncDirektoriAlumni(ss, postData.alumni || []);
     } else if (action === 'setupSheets') {
       result = initializeDatabaseSheets(ss);
     } else {
@@ -272,6 +284,51 @@ function deleteSingleNilai(ss, id) {
   return { success: false };
 }
 
+function syncInventarisAset(ss, items) {
+  var headers = ['id', 'kode_inventaris', 'nama_perangkat', 'kategori', 'nomor_seri', 'lokasi_kampus', 'ruangan', 'kondisi', 'status_peminjaman', 'peminjam_aktif', 'peran_peminjam', 'tanggal_pinjam', 'rencana_kembali', 'keperluan_pinjam', 'tanggal_perolehan', 'catatan', 'updated_at'];
+  var sheet = ss.getSheetByName('inventaris_aset') || ss.insertSheet('inventaris_aset');
+  sheet.clearContents();
+  sheet.appendRow(headers);
+  sheet.setFrozenRows(1);
+  if (items && items.length > 0) {
+    var rows = items.map(function(a) {
+      return [
+        a.id || '', a.kode_inventaris || '', a.nama_perangkat || '', a.kategori || '',
+        a.nomor_seri || '', a.lokasi_kampus || '', a.ruangan || '', a.kondisi || '',
+        a.status_peminjaman || '', a.peminjam_aktif || '', a.peran_peminjam || '',
+        a.tanggal_pinjam || '', a.rencana_kembali || '', a.keperluan_pinjam || '',
+        a.tanggal_perolehan || '', a.catatan || '', a.updated_at || new Date().toISOString()
+      ];
+    });
+    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+  return { success: true, count: items ? items.length : 0 };
+}
+
+function syncDirektoriAlumni(ss, items) {
+  var headers = ['id', 'nis_alumni', 'nama', 'tahun_masuk', 'tahun_lulus', 'angkatan', 'kampus_asal', 'kelas_terakhir', 'kampus_diterima', 'kategori_perguruan_tinggi', 'tahun_diterima', 'jurusan_diterima', 'jalur_masuk_kampus', 'sektor_karier', 'profesi_saat_ini', 'instansi_atau_kampus', 'kota_domisili', 'status_kontak', 'telepon_wa', 'email', 'linkedin_url', 'terakhir_dihubungi', 'bersedia_mentoring', 'catatan', 'updated_at'];
+  var sheet = ss.getSheetByName('direktori_alumni') || ss.insertSheet('direktori_alumni');
+  sheet.clearContents();
+  sheet.appendRow(headers);
+  sheet.setFrozenRows(1);
+  if (items && items.length > 0) {
+    var rows = items.map(function(a) {
+      return [
+        a.id || '', a.nis_alumni || '', a.nama || '', Number(a.tahun_masuk) || '',
+        Number(a.tahun_lulus) || '', a.angkatan || '', a.kampus_asal || '',
+        a.kelas_terakhir || '', a.kampus_diterima || '', a.kategori_perguruan_tinggi || '',
+        Number(a.tahun_diterima) || '', a.jurusan_diterima || '', a.jalur_masuk_kampus || '',
+        a.sektor_karier || '', a.profesi_saat_ini || '', a.instansi_atau_kampus || '',
+        a.kota_domisili || '', a.status_kontak || '', a.telepon_wa || '', a.email || '',
+        a.linkedin_url || '', a.terakhir_dihubungi || '', a.bersedia_mentoring || 'Tidak',
+        a.catatan || '', a.updated_at || new Date().toISOString()
+      ];
+    });
+    sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
+  }
+  return { success: true, count: items ? items.length : 0 };
+}
+
 function initializeDatabaseSheets(ss) {
   var schemas = {
     'master_siswa': ['cabang', 'siswa', 'email_siswa'],
@@ -279,7 +336,9 @@ function initializeDatabaseSheets(ss) {
     'master_kelas': ['id_kelas', 'cabang', 'kelas', 'mapel', 'hari', 'waktu', 'guru'],
     'siswa_kelas': ['id_kelas', 'siswa', 'email_siswa', 'kelas', 'mapel', 'hari', 'waktu', 'guru', 'cabang'],
     'log_absensi': ['id_absensi', 'tanggal', 'id_kelas', 'siswa', 'status_kehadiran', 'id_tutor', 'timestamp'],
-    'log_nilai': ['id_nilai', 'tanggal', 'id_kelas', 'siswa', 'mapel', 'jenis_penilaian', 'nilai', 'catatan', 'id_tutor', 'timestamp']
+    'log_nilai': ['id_nilai', 'tanggal', 'id_kelas', 'siswa', 'mapel', 'jenis_penilaian', 'nilai', 'catatan', 'id_tutor', 'timestamp'],
+    'inventaris_aset': ['id', 'kode_inventaris', 'nama_perangkat', 'kategori', 'nomor_seri', 'lokasi_kampus', 'ruangan', 'kondisi', 'status_peminjaman', 'peminjam_aktif', 'peran_peminjam', 'tanggal_pinjam', 'rencana_kembali', 'keperluan_pinjam', 'tanggal_perolehan', 'catatan', 'updated_at'],
+    'direktori_alumni': ['id', 'nis_alumni', 'nama', 'tahun_masuk', 'tahun_lulus', 'angkatan', 'kampus_asal', 'kelas_terakhir', 'kampus_diterima', 'kategori_perguruan_tinggi', 'tahun_diterima', 'jurusan_diterima', 'jalur_masuk_kampus', 'sektor_karier', 'profesi_saat_ini', 'instansi_atau_kampus', 'kota_domisili', 'status_kontak', 'telepon_wa', 'email', 'linkedin_url', 'terakhir_dihubungi', 'bersedia_mentoring', 'catatan', 'updated_at']
   };
   for (var name in schemas) {
     var sheet = ss.getSheetByName(name);
@@ -289,7 +348,7 @@ function initializeDatabaseSheets(ss) {
       sheet.setFrozenRows(1);
     }
   }
-  return { success: true, message: '6 Sheet berhasil diinisialisasi!' };
+  return { success: true, message: '8 Sheet (termasuk inventaris_aset & direktori_alumni) berhasil diinisialisasi!' };
 }`;
 
   const copyToClipboard = () => {

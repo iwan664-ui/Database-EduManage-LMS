@@ -35,6 +35,14 @@ import {
   X,
   Lock,
   SendHorizontal,
+  UserPlus,
+  CalendarClock,
+  HeartHandshake,
+  Trophy,
+  ClipboardCheck,
+  Wallet,
+  Laptop,
+  Award,
 } from 'lucide-react';
 
 export interface SidebarNavItem {
@@ -108,11 +116,15 @@ export function SidebarNav({
       title: 'Akademik & KBM',
       items: [
         { id: 'dashboard', label: 'Dashboard Tutor', icon: <LayoutDashboard className="w-4 h-4 shrink-0" />, accent: 'blue' },
+        { id: 'jadwal-guru', label: 'Jadwal & Kelas Saya', icon: <CalendarClock className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'input', label: 'Input Presensi & Nilai', icon: <PlusCircle className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'crud', label: 'Riwayat & CRUD Data', icon: <History className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'rekap', label: 'Rekapitulasi Kelas', icon: <BarChart3 className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'scan-gerbang', label: 'Scan Hadir & Pulang', icon: <QrCode className="w-4 h-4 shrink-0" />, accent: 'emerald' },
-        { id: 'rapor-pekanan', label: 'Kirim Rapor Pekanan', icon: <SendHorizontal className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'rapor-pekanan', label: 'Rapor Pekanan', icon: <SendHorizontal className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'rapor-tengah-semester', label: 'Rapor Tengah Semester', icon: <ClipboardCheck className="w-4 h-4 shrink-0" />, accent: 'orange' },
+        { id: 'rapor-semester', label: 'Rapor Semester', icon: <Award className="w-4 h-4 shrink-0" />, accent: 'blue' },
+        { id: 'konseling-guru', label: 'Perizinan & Konseling', icon: <HeartHandshake className="w-4 h-4 shrink-0" />, accent: 'orange' },
       ],
     },
     {
@@ -135,8 +147,12 @@ export function SidebarNav({
         { id: 'grafik', label: 'Grafik Nilai (KKM 85)', icon: <BarChart2 className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'harian', label: 'Report Harian', icon: <Clock className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'hadir-pulang', label: 'Jam Hadir & Pulang', icon: <QrCode className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'izin-santri', label: 'Izin & Sakit Online', icon: <ClipboardCheck className="w-4 h-4 shrink-0" />, accent: 'orange' },
         { id: 'pekanan', label: 'Rapor Pekanan Guru', icon: <SendHorizontal className="w-4 h-4 shrink-0" />, accent: 'emerald' },
         { id: 'bulanan', label: 'Rapor Bulanan', icon: <TrendingUp className="w-4 h-4 shrink-0" />, accent: 'blue' },
+        { id: 'tengah-semester', label: 'Rapor Tengah Semester', icon: <ClipboardCheck className="w-4 h-4 shrink-0" />, accent: 'orange' },
+        { id: 'semester', label: 'Rapor Semester', icon: <Award className="w-4 h-4 shrink-0" />, accent: 'blue' },
+        { id: 'keuangan-santri', label: 'Keuangan & Tagihan SPP', icon: <Wallet className="w-4 h-4 shrink-0" />, accent: 'emerald' },
         { id: 'jadwal', label: 'Jadwal KBM', icon: <Calendar className="w-4 h-4 shrink-0" />, accent: 'orange' },
       ],
     },
@@ -145,6 +161,7 @@ export function SidebarNav({
       items: [
         { id: 'mutabaah', label: "Mutaba'ah & Tahfidz", icon: <Flame className="w-4 h-4 shrink-0" />, accent: 'emerald' },
         { id: 'adab', label: 'Bintang Akhlak & Adab', icon: <Star className="w-4 h-4 shrink-0" />, accent: 'orange' },
+        { id: 'prestasi-santri', label: 'Prestasi & Portofolio', icon: <Trophy className="w-4 h-4 shrink-0" />, accent: 'orange' },
         { id: 'ekskul', label: 'Ekstrakurikuler', icon: <Compass className="w-4 h-4 shrink-0" />, accent: 'emerald' },
         { id: 'kartu', label: 'Kartu Santri Smart ID', icon: <IdCard className="w-4 h-4 shrink-0" />, accent: 'blue' },
       ],
@@ -163,14 +180,27 @@ export function SidebarNav({
 
   const adminGroups: SidebarNavGroup[] = [
     {
+      title: 'Kurikulum & Kesiswaan',
+      items: [
+        { id: 'kurikulum-jadwal', label: 'Jadwal & Kelas Guru', icon: <CalendarClock className="w-4 h-4 shrink-0" />, accent: 'orange' },
+        { id: 'kurikulum-siswa', label: 'Siswa Masuk & Keluar', icon: <UserPlus className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'direktori-alumni', label: 'Direktori Alumni', icon: <GraduationCap className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'keuangan-divisi', label: 'Divisi Keuangan & SPP', icon: <Wallet className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'konseling-admin', label: 'Izin & Konseling Santri', icon: <HeartHandshake className="w-4 h-4 shrink-0" />, accent: 'blue' },
+      ],
+    },
+    {
       title: 'Kendali & Pelaporan',
       items: [
         { id: 'monitoring', label: 'Monitoring Central', icon: <ShieldCheck className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'scan-gerbang', label: 'Scan Hadir & Pulang', icon: <QrCode className="w-4 h-4 shrink-0" />, accent: 'emerald' },
         { id: 'print', label: 'Cetak Rapor Bulanan', icon: <FileText className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'rapor-pekanan', label: 'Rapor Pekanan Ortu', icon: <SendHorizontal className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'rapor-tengah-semester', label: 'Rapor Tengah Semester', icon: <ClipboardCheck className="w-4 h-4 shrink-0" />, accent: 'orange' },
+        { id: 'rapor-semester', label: 'Rapor Semester', icon: <Award className="w-4 h-4 shrink-0" />, accent: 'blue' },
         { id: 'insight', label: 'Auto AI Insight', icon: <Sparkles className="w-4 h-4 shrink-0" />, accent: 'orange' },
         { id: 'fee', label: 'Rekapitulasi Honor Tutor', icon: <DollarSign className="w-4 h-4 shrink-0" />, accent: 'emerald' },
+        { id: 'inventaris-aset', label: 'Inventaris Aset', icon: <Laptop className="w-4 h-4 shrink-0" />, accent: 'blue' },
       ],
     },
     {

@@ -11,8 +11,11 @@ import { AssignmentHub } from '../assignment/AssignmentHub';
 import { VirtualClassroomHub } from '../virtual/VirtualClassroomHub';
 import { AnnouncementBulletinBoard } from '../announcement/AnnouncementBulletinBoard';
 import { StudentWeeklyReportsView } from './StudentWeeklyReportsView';
+import { StudentTermReportsView } from './StudentTermReportsView';
 import { StudentGateAttendanceView } from './StudentGateAttendanceView';
 import { StudentProgressRadarChart } from './StudentProgressRadarChart';
+import { StudentLeaveRequestView, StudentAchievementPortfolioView } from './StudentSupportViews';
+import { StudentFinanceView } from './StudentFinanceView';
 import { GateAttendanceService } from '../../services/gateAttendanceService';
 import {
   User,
@@ -47,6 +50,7 @@ import {
   Video,
   Megaphone,
   FileCheck,
+  ClipboardCheck,
 } from 'lucide-react';
 
 export type StudentPortalTab =
@@ -65,6 +69,11 @@ export type StudentPortalTab =
   | 'harian'
   | 'hadir-pulang'
   | 'pekanan'
+  | 'tengah-semester'
+  | 'semester'
+  | 'izin-santri'
+  | 'prestasi-santri'
+  | 'keuangan-santri'
   | 'bulanan';
 
 interface StudentPortalProps {
@@ -705,6 +714,18 @@ export function StudentPortal({
           </button>
 
           <button
+            onClick={() => setActiveTab('pekanan')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+              activeTab === 'pekanan'
+                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
+            Rapor Pekanan
+          </button>
+
+          <button
             onClick={() => setActiveTab('bulanan')}
             className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
               activeTab === 'bulanan'
@@ -714,6 +735,30 @@ export function StudentPortal({
           >
             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
             Rapor Bulanan
+          </button>
+
+          <button
+            onClick={() => setActiveTab('tengah-semester')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+              activeTab === 'tengah-semester'
+                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <ClipboardCheck className="w-3.5 h-3.5 text-orange-500" />
+            Rapor PTS
+          </button>
+
+          <button
+            onClick={() => setActiveTab('semester')}
+            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
+              activeTab === 'semester'
+                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+            }`}
+          >
+            <Award className="w-3.5 h-3.5 text-blue-500" />
+            Rapor Semester
           </button>
           </div>
         )}
@@ -816,6 +861,46 @@ export function StudentPortal({
       {/* ============================================================== */}
       {activeTab === 'pekanan' && (
         <StudentWeeklyReportsView studentName={selectedStudentName} />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: RAPOR TENGAH SEMESTER (PTS) & RAPOR SEMESTER (PAS/PAT)    */}
+      {/* ============================================================== */}
+      {activeTab === 'tengah-semester' && (
+        <StudentTermReportsView
+          studentName={selectedStudentName}
+          database={database}
+          reportType="Tengah Semester"
+        />
+      )}
+
+      {activeTab === 'semester' && (
+        <StudentTermReportsView
+          studentName={selectedStudentName}
+          database={database}
+          reportType="Semester"
+        />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: PENGAJUAN IZIN & SURAT SAKIT ONLINE                      */}
+      {/* ============================================================== */}
+      {activeTab === 'izin-santri' && (
+        <StudentLeaveRequestView studentName={selectedStudentName} cabang={studentInfo.cabang} />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: PRESTASI & PORTOFOLIO SANTRI                              */}
+      {/* ============================================================== */}
+      {activeTab === 'prestasi-santri' && (
+        <StudentAchievementPortfolioView studentName={selectedStudentName} />
+      )}
+
+      {/* ============================================================== */}
+      {/* TAB: KEUANGAN & TAGIHAN SPP SANTRI                             */}
+      {/* ============================================================== */}
+      {activeTab === 'keuangan-santri' && (
+        <StudentFinanceView studentName={selectedStudentName} />
       )}
 
       {/* ============================================================== */}
