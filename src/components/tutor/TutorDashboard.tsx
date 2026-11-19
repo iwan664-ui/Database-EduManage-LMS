@@ -42,77 +42,111 @@ export function TutorDashboard({
   return (
     <div className="space-y-6">
       {/* Hero Welcome Banner */}
-      <div className="bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="flex items-center gap-2 text-xs text-blue-300 font-medium">
-            <span>AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY</span>
-            <span aria-hidden="true">·</span>
-            <span>Portal Pendidik Terenkripsi</span>
-            <span aria-hidden="true">·</span>
-            <span className="text-emerald-400 font-semibold flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> WebAuthn Protected
-            </span>
+      <div className="bg-slate-900 rounded-2xl p-5 md:p-7 text-white border border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-300 font-medium">
+              <span>AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY</span>
+              <span aria-hidden="true">·</span>
+              <span>Portal Pendidik Terenkripsi</span>
+              <span aria-hidden="true">·</span>
+              <span className="text-emerald-400 font-semibold inline-flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" /> WebAuthn Protected
+              </span>
+            </div>
+
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
+              Selamat Datang, {user.name}
+            </h2>
+
+            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+              Kelola presensi, nilai siswa standar KKM 85, jadwal mengajar, serta pelaporan pekanan wali murid secara terpadu.
+            </p>
           </div>
 
-          <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
-            Selamat Datang, {user.name}
-          </h2>
-
-          <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
-            Kelola kehadiran dan pengisian nilai siswa per kelas secara simultan. Terintegrasi langsung dengan database Google Sheets sekolah dengan perlindungan data tingkat tinggi dan standar kelulusan KKM 85.
-          </p>
-
-          <div className="flex flex-wrap gap-2.5 pt-3">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
+              type="button"
               onClick={() => onNavigateTab('input')}
-              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all flex items-center gap-2 cursor-pointer"
+              className="py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold transition-colors flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>Input Presensi & Nilai</span>
+              <span>Input Presensi &amp; Nilai</span>
             </button>
             <button
+              type="button"
               onClick={() => onNavigateTab('jadwal-guru')}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
+              className="py-2 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-semibold transition-colors flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Calendar className="w-4 h-4" />
-              <span>Jadwal & Kelas Saya</span>
-            </button>
-            <button
-              onClick={() => onNavigateTab('rekap')}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Rekapitulasi Kelas</span>
-            </button>
-            <button
-              onClick={() => onNavigateTab('scan-gerbang')}
-              className="py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <QrCode className="w-4 h-4" />
-              <span>Scan Hadir & Pulang</span>
-            </button>
-            <button
-              onClick={() => onNavigateTab('rapor-pekanan')}
-              className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <SendHorizontal className="w-4 h-4" />
-              <span>Kirim Rapor Pekanan Ortu</span>
-            </button>
-            <button
-              onClick={() => onNavigateTab('konseling-guru')}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Award className="w-4 h-4" />
-              <span>Izin & Konseling Santri</span>
-            </button>
-            <button
-              onClick={() => onNavigateTab('crud')}
-              className="py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <History className="w-4 h-4" />
-              <span>Riwayat Input</span>
+              <span>Jadwal &amp; Kelas Saya</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Structured Quick Actions for Teachers */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold text-slate-700">Akses Cepat Menu Guru</h3>
+          <span className="text-[11px] text-slate-500">Jalan pintas aktivitas mengajar harian</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {[
+            {
+              tab: 'input' as const,
+              title: 'Input Nilai & Absen',
+              desc: 'Catat sesi KBM hari ini',
+              icon: <PlusCircle className="w-4 h-4 text-blue-600" />,
+            },
+            {
+              tab: 'jadwal-guru' as const,
+              title: 'Jadwal Mengajar',
+              desc: 'Daftar kelas aktif',
+              icon: <Calendar className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'rekap' as const,
+              title: 'Rekapitulasi Kelas',
+              desc: 'Capaian nilai KKM 85',
+              icon: <BarChart3 className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'scan-gerbang' as const,
+              title: 'Scan Hadir/Pulang',
+              desc: 'Presensi gerbang QR',
+              icon: <QrCode className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'rapor-pekanan' as const,
+              title: 'Rapor Pekanan',
+              desc: 'Kirim ringkasan ke Ortu',
+              icon: <SendHorizontal className="w-4 h-4 text-emerald-600" />,
+            },
+            {
+              tab: 'konseling-guru' as const,
+              title: 'Izin & Konseling',
+              desc: 'Tindak lanjut santri',
+              icon: <Award className="w-4 h-4 text-slate-700" />,
+            },
+          ].map((item) => (
+            <button
+              key={item.tab}
+              type="button"
+              onClick={() => onNavigateTab(item.tab)}
+              className="group text-left p-3 rounded-xl bg-slate-50/70 hover:bg-white border border-slate-200 hover:border-slate-300 transition-colors flex items-start gap-2.5 cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                {item.icon}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-slate-900 truncate group-hover:text-blue-700 transition-colors">
+                  {item.title}
+                </div>
+                <div className="text-[11px] text-slate-500 truncate mt-0.5">{item.desc}</div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 

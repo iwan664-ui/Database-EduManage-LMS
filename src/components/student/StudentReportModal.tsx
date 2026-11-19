@@ -1,24 +1,20 @@
-import React, { useState } from 'react';
-import { DatabaseState, MasterSiswa, SiswaEkstrakurikuler } from '../../types';
+import React, { useState, useEffect } from 'react';
+import { DatabaseState } from '../../types';
+import { ParentReportEmailService } from '../../services/parentReportEmailService';
 import { useToast } from '../Toast';
 import {
   X,
   Printer,
-  Download,
-  Share2,
   Award,
   CheckCircle2,
   FileText,
   QrCode,
   Sparkles,
   MessageCircle,
+  Mail,
   Copy,
   Check,
-  Calendar,
-  Building2,
-  BookOpen,
   Send,
-  User,
 } from 'lucide-react';
 
 interface StudentReportModalProps {
@@ -26,7 +22,7 @@ interface StudentReportModalProps {
   onClose: () => void;
   studentName: string;
   database: DatabaseState;
-  initialTab?: 'rapor' | 'piagam' | 'whatsapp';
+  initialTab?: 'rapor' | 'piagam' | 'whatsapp' | 'email';
 }
 
 export function StudentReportModal({
@@ -37,15 +33,35 @@ export function StudentReportModal({
   initialTab = 'rapor',
 }: StudentReportModalProps) {
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'rapor' | 'piagam' | 'whatsapp'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'rapor' | 'piagam' | 'whatsapp' | 'email'>(initialTab);
   const [copiedWa, setCopiedWa] = useState<boolean>(false);
+  const [copiedEmail, setCopiedEmail] = useState<boolean>(false);
   const [parentWaNumber, setParentWaNumber] = useState<string>('');
+  const [parentEmail, setParentEmail] = useState<string>('');
+  const [emailMonth, setEmailMonth] = useState<string>('Oktober');
+  const [emailYear, setEmailYear] = useState<number>(2026);
+  const [isSendingGas, setIsSendingGas] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  const studentMaster = database.master_siswa.find((s) => s.siswa === studentName);
+
+  useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab, isOpen]);
+
+  useEffect(() => {
+    if (isOpen && studentName) {
+      const resolvedEmail = ParentReportEmailService.getGuardianEmail(
+        studentName,
+        studentMaster?.email_siswa,
+        studentMaster?.email_wali
+      );
+      const savedWa = ParentReportEmailService.getParentContacts()[studentName]?.wa || '';
+      setParentEmail(resolvedEmail);
+      setParentWaNumber(savedWa);
+    }
+  }, [isOpen, studentName, studentMaster?.email_siswa, studentMaster?.email_wali]);
 
   const KKM_STANDARD = 85;
 
@@ -170,6 +186,106 @@ _AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY_`;
     window.open(url, '_blank');
   };
 
+  const monthlyEmailPayload = ParentReportEmailService.buildMonthlyEmailPayload(
+    {
+      siswa: student.siswa,
+      kelas: classes[0]?.kelas || 'Kelas Reguler',
+      mapel: classes.map((c) => c.mapel).join(', ') || 'Semua Mata Pelajaran',
+      cabang: student.cabang,
+      guru: classes[0]?.guru || 'Wali Kelas / Tutor',
+      bulan: emailMonth,
+      tahun: emailYear,
+      hadir,
+      izin,
+      sakit,
+      alfa,
+      presenceRate,
+      avg: avgGrade,
+      status: avgGrade >= KKM_STANDARD ? 'Tuntas' : avgGrade > 0 ? 'Remedial' : 'Belum Ada Nilai',
+      subjectDetails: subjectRows.map((s) => ({
+        mapel: s.mapel,
+        avg: s.avg,
+        status: s.avg >= KKM_STANDARD ? 'Tuntas' : s.avg > 0 ? 'Remedial' : 'Belum Dinilai',
+      })),
+    },
+    parentEmail
+  );
+
+  const handleSaveGuardianEmail = () => {
+    const trimmed = parentEmail.trim();
+    if (!ParentReportEmailService.isValidEmail(trimmed)) {
+      showToast('Email Tidak Valid', 'Masukkan format email wali santri yang benar.', 'warning');
+      return;
+    }
+    ParentReportEmailService.saveGuardianEmail(student.siswa, trimmed);
+    showToast('Email Wali Disimpan', `Email wali ${student.siswa} disimpan ke ${trimmed}.`, 'success');
+  };
+
+  const recordSingleEmail = (method: 'Aplikasi Email (Mailto)' | 'Google Apps Script' | 'Salin Konten') => {
+    ParentReportEmailService.recordMonthlyEmailSent([
+      {
+        siswa: student.siswa,
+        id_kelas: classes[0]?.id_kelas || 'ALL',
+        kelas: classes[0]?.kelas || 'Kelas Reguler',
+        mapel: classes.map((c) => c.mapel).join(', ') || 'Semua Mapel',
+        bulan: emailMonth,
+        tahun: emailYear,
+        email_wali: parentEmail.trim(),
+        rata_nilai: avgGrade,
+        persen_kehadiran: presenceRate,
+        status_kkm: avgGrade >= KKM_STANDARD ? 'Tuntas' : avgGrade > 0 ? 'Remedial' : 'Belum Ada Nilai',
+        metode: method,
+        dikirim_oleh: classes[0]?.guru || 'Admin / Wali Kelas',
+      },
+    ]);
+  };
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(
+      `Kepada: ${monthlyEmailPayload.to}\nSubjek: ${monthlyEmailPayload.subject}\n\n${monthlyEmailPayload.body}`
+    );
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2500);
+    if (ParentReportEmailService.isValidEmail(parentEmail)) {
+      recordSingleEmail('Salin Konten');
+    }
+    showToast('Isi Email Disalin', 'Rapor bulanan siap ditempelkan ke aplikasi email Anda.', 'success');
+  };
+
+  const handleOpenMailClient = () => {
+    if (!ParentReportEmailService.isValidEmail(parentEmail)) {
+      showToast('Email Wali Tidak Valid', 'Mohon isi alamat email wali santri terlebih dahulu.', 'warning');
+      return;
+    }
+    ParentReportEmailService.saveGuardianEmail(student.siswa, parentEmail);
+    recordSingleEmail('Aplikasi Email (Mailto)');
+    window.location.href = ParentReportEmailService.buildMailtoUrl(
+      monthlyEmailPayload.to,
+      monthlyEmailPayload.subject,
+      monthlyEmailPayload.body
+    );
+    showToast('Email Rapor Dibuka', `Rapor bulanan ${student.siswa} disiapkan ke ${parentEmail.trim()}.`, 'success');
+  };
+
+  const handleSendViaGas = async () => {
+    if (!ParentReportEmailService.isValidEmail(parentEmail)) {
+      showToast('Email Wali Tidak Valid', 'Mohon isi alamat email wali santri terlebih dahulu.', 'warning');
+      return;
+    }
+    setIsSendingGas(true);
+    try {
+      const res = await ParentReportEmailService.sendEmailsViaAppsScript([monthlyEmailPayload]);
+      if (res.success) {
+        recordSingleEmail('Google Apps Script');
+        showToast('Email Terkirim', `Rapor bulanan berhasil dikirim ke ${parentEmail.trim()}.`, 'success');
+      } else {
+        showToast('Gagal Kirim Otomatis', res.message, 'error');
+      }
+    } finally {
+      setIsSendingGas(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-slate-950/80 backdrop-blur-xs animate-fade-in print:p-0 print:bg-white print:static print:inset-auto">
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200/90 max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden print:max-w-none print:max-h-none print:shadow-none print:border-none print:rounded-none">
@@ -213,10 +329,10 @@ _AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY_`;
         </div>
 
         {/* Tab Switcher (Hidden on print) */}
-        <div className="print:hidden flex border-b border-slate-100 px-5 pt-3 gap-2 bg-white">
+        <div className="print:hidden flex flex-wrap border-b border-slate-100 px-5 pt-3 gap-2 bg-white">
           <button
             onClick={() => setActiveTab('rapor')}
-            className={`py-2 px-4 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 ${
+            className={`py-2 px-4 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'rapor'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -227,7 +343,7 @@ _AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY_`;
           </button>
           <button
             onClick={() => setActiveTab('piagam')}
-            className={`py-2 px-4 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 ${
+            className={`py-2 px-4 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'piagam'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -237,8 +353,19 @@ _AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY_`;
             Piagam Prestasi Akademik
           </button>
           <button
+            onClick={() => setActiveTab('email')}
+            className={`py-2 px-4 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 whitespace-nowrap shrink-0 cursor-pointer ${
+              activeTab === 'email'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Mail className="w-4 h-4 text-blue-600" />
+            Kirim Email ke Wali Santri
+          </button>
+          <button
             onClick={() => setActiveTab('whatsapp')}
-            className={`py-2 px-4 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 ${
+            className={`py-2 px-4 text-xs font-bold transition-all flex items-center gap-1.5 border-b-2 whitespace-nowrap shrink-0 cursor-pointer ${
               activeTab === 'whatsapp'
                 ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -622,6 +749,124 @@ _AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY_`;
                 <span>
                   Format pesan mencakup salam formal, capaian nilai berbanding standar KKM 85, persentase kehadiran, dan portofolio ekstrakurikuler.
                 </span>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================= */}
+          {/* TAB 4: EMAIL RAPOR BULANAN KE WALI SANTRI                 */}
+          {/* ========================================================= */}
+          {activeTab === 'email' && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm max-w-2xl mx-auto space-y-5">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                  <Mail className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">
+                    Kirim Rapor Bulanan ke Email Wali Santri
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Kirimkan rekap hasil belajar dan presensi bulanan resmi ke alamat email wali dari {student.siswa}.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                <div className="sm:col-span-6">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Email Wali Santri Tujuan
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="email"
+                      value={parentEmail}
+                      onChange={(e) => setParentEmail(e.target.value)}
+                      placeholder="wali.santri@email.com"
+                      className="flex-1 text-xs font-mono font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveGuardianEmail}
+                      className="py-2 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer"
+                    >
+                      Simpan
+                    </button>
+                  </div>
+                </div>
+
+                <div className="sm:col-span-4">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Periode Bulan
+                  </label>
+                  <select
+                    value={emailMonth}
+                    onChange={(e) => setEmailMonth(e.target.value)}
+                    className="w-full text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    {[
+                      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+                    ].map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Tahun
+                  </label>
+                  <input
+                    type="number"
+                    value={emailYear}
+                    onChange={(e) => setEmailYear(Number(e.target.value) || 2026)}
+                    className="w-full text-xs font-mono font-semibold rounded-xl border border-slate-300 px-2.5 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700">
+                    Subjek: <span className="font-normal text-slate-600">{monthlyEmailPayload.subject}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyEmail}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                  >
+                    {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedEmail ? 'Tersalin!' : 'Salin Isi Email'}</span>
+                  </button>
+                </div>
+                <div className="bg-slate-900 text-slate-100 p-4 rounded-2xl font-mono text-xs whitespace-pre-line leading-relaxed max-h-64 overflow-y-auto border border-slate-800">
+                  {monthlyEmailPayload.body}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                {ParentReportEmailService.hasAppsScriptConfigured() && (
+                  <button
+                    type="button"
+                    onClick={handleSendViaGas}
+                    disabled={isSendingGas}
+                    className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSendingGas ? 'Mengirim...' : 'Kirim Otomatis (Apps Script)'}</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleOpenMailClient}
+                  className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Kirim via Aplikasi Email</span>
+                </button>
               </div>
             </div>
           )}

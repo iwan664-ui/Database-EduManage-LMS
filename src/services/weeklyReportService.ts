@@ -4,9 +4,9 @@ import {
   WeeklyReportItem,
   WeeklyReportSubjectDetail,
 } from '../types';
+import { ParentReportEmailService } from './parentReportEmailService';
 
 const STORAGE_KEY_WEEKLY_REPORTS = 'edumanage_weekly_reports_v1';
-const STORAGE_KEY_PARENT_CONTACTS = 'edumanage_parent_contacts_v1';
 
 export interface ParentContactInfo {
   wa: string;
@@ -49,10 +49,12 @@ const DEFAULT_SEED_REPORTS: WeeklyReportItem[] = [
     rekomendasi_ortu:
       'Mohon ayah/bunda terus mendampingi murajaah hafalan dan memberikan apresiasi atas konsistensi belajar Ananda pekan ini.',
     kontak_wa_ortu: '081288990011',
-    email_ortu: 'ahmad.rizky@gmail.com',
-    channels: ['Portal Walmur', 'WhatsApp'],
+    email_ortu: 'wali.ahmad.rizky@gmail.com',
+    email_tujuan: 'wali.ahmad.rizky@gmail.com',
+    channels: ['Portal Walmur', 'WhatsApp', 'Email'],
     status_kirim: 'Dibaca Orang Tua',
     dikirim_pada: '2026-11-08T15:30:00.000Z',
+    email_dikirim_pada: '2026-11-08T15:32:00.000Z',
     dibaca_pada: '2026-11-08T18:10:00.000Z',
   },
   {
@@ -90,7 +92,7 @@ const DEFAULT_SEED_REPORTS: WeeklyReportItem[] = [
     rekomendasi_ortu:
       'Mohon bantu mengingatkan Ananda untuk mengulas kembali latihan soal pekan ini agar semakin siap menghadapi evaluasi tengah semester.',
     kontak_wa_ortu: '081344556677',
-    email_ortu: 'bella.safitri@gmail.com',
+    email_ortu: 'wali.bella.safitri@gmail.com',
     channels: ['Portal Walmur', 'PDF'],
     status_kirim: 'Terkirim',
     dikirim_pada: '2026-11-08T16:00:00.000Z',
@@ -159,6 +161,12 @@ export class WeeklyReportService {
       } else {
         current = [rep, ...current];
       }
+      if (rep.kontak_wa_ortu || rep.email_ortu) {
+        this.saveParentContact(rep.siswa, {
+          wa: rep.kontak_wa_ortu || '',
+          email: rep.email_ortu || '',
+        });
+      }
     }
     this.saveAllReports(current);
     return current;
@@ -186,18 +194,11 @@ export class WeeklyReportService {
   }
 
   static getParentContacts(): Record<string, ParentContactInfo> {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_PARENT_CONTACTS);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
+    return ParentReportEmailService.getParentContacts();
   }
 
   static saveParentContact(studentName: string, contact: ParentContactInfo): void {
-    const all = this.getParentContacts();
-    all[studentName] = contact;
-    localStorage.setItem(STORAGE_KEY_PARENT_CONTACTS, JSON.stringify(all));
+    ParentReportEmailService.saveGuardianContact(studentName, contact);
   }
 
   /**
@@ -351,7 +352,11 @@ export class WeeklyReportService {
       catatan_guru,
       rekomendasi_ortu,
       kontak_wa_ortu: savedContact?.wa || '',
-      email_ortu: savedContact?.email || masterStudent?.email_siswa || '',
+      email_ortu: ParentReportEmailService.getGuardianEmail(
+        studentName,
+        masterStudent?.email_siswa,
+        masterStudent?.email_wali
+      ),
       channels: ['Portal Walmur'],
       status_kirim: 'Terkirim',
       dikirim_pada: new Date().toISOString(),
@@ -419,9 +424,7 @@ _Laporan lengkap juga dapat diakses Orang Tua melalui Portal Santri & Walmur LMS
   }
 
   static buildMailtoUrl(report: WeeklyReportItem): string {
-    const subject = `[Rapor Pekanan] ${report.siswa} - ${report.periode_label} (AL-WILDAN 3 BSD CITY)`;
-    const body = this.formatWhatsAppMessage(report).replace(/\*/g, '').replace(/_/g, '');
-    const to = (report.email_ortu || '').trim();
-    return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const payload = ParentReportEmailService.buildWeeklyEmailPayload(report);
+    return ParentReportEmailService.buildMailtoUrl(payload.to, payload.subject, payload.body);
   }
 }

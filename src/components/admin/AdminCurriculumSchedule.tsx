@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ActiveUser, DatabaseState, MasterKelas } from '../../types';
 import { CurriculumService } from '../../services/curriculumService';
+import { ScheduleDragDropBoard } from './ScheduleDragDropBoard';
 import { useToast } from '../Toast';
 import {
   Calendar,
@@ -62,9 +63,10 @@ export function AdminCurriculumSchedule({
   const [newGuruName, setNewGuruName] = useState<string>('');
 
   // View & Filter state
-  const [viewMode, setViewMode] = useState<'per-guru' | 'matriks'>('per-guru');
+  const [viewMode, setViewMode] = useState<'dnd' | 'per-guru' | 'matriks'>('dnd');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterGuru, setFilterGuru] = useState<string>('all');
+  const [filterCampus, setFilterCampus] = useState<string>('all');
 
   const existingClassNames = useMemo(() => {
     const set = new Set<string>();
@@ -182,9 +184,38 @@ export function AdminCurriculumSchedule({
     onDatabaseUpdated();
   };
 
+  const handleMoveScheduleSlot = (idKelas: string, newHari: string, newWaktu: string) => {
+    const res = CurriculumService.moveScheduleSlot(idKelas, newHari, newWaktu);
+    if (res.success) {
+      showToast('Jadwal Dipindahkan', res.message, 'success');
+      onDatabaseUpdated();
+    } else {
+      showToast('Gagal Memindahkan Jadwal', res.message, 'error');
+    }
+  };
+
+  const handleSwapScheduleSlots = (idKelasA: string, idKelasB: string) => {
+    const res = CurriculumService.swapScheduleSlots(idKelasA, idKelasB);
+    if (res.success) {
+      showToast('Slot Jadwal Ditukar', res.message, 'success');
+      onDatabaseUpdated();
+    } else {
+      showToast('Gagal Menukar Slot', res.message, 'error');
+    }
+  };
+
+  const handlePrefillEmptySlot = (hari: string, waktu: string) => {
+    resetForm();
+    setHariInput(hari);
+    setWaktuInput(waktu);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showToast('Slot Waktu Dipilih', `Form disiapkan untuk hari ${hari} pukul ${waktu}.`, 'info');
+  };
+
   const filteredClasses = useMemo(() => {
     return database.master_kelas.filter((k) => {
       if (filterGuru !== 'all' && k.guru !== filterGuru) return false;
+      if (filterCampus !== 'all' && k.cabang !== filterCampus) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         return (
@@ -197,7 +228,7 @@ export function AdminCurriculumSchedule({
       }
       return true;
     });
-  }, [database.master_kelas, filterGuru, searchQuery]);
+  }, [database.master_kelas, filterGuru, filterCampus, searchQuery]);
 
   // Group by Guru for "Daftar per Guru"
   const groupedByGuru = useMemo(() => {
@@ -481,13 +512,35 @@ export function AdminCurriculumSchedule({
                 </option>
               ))}
             </select>
+
+            <select
+              value={filterCampus}
+              onChange={(e) => setFilterCampus(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-600"
+            >
+              <option value="all">Semua Kampus</option>
+              {CAMPUSES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 self-start">
+          <div className="inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 self-start overflow-x-auto max-w-full">
+            <button
+              type="button"
+              onClick={() => setViewMode('dnd')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
+                viewMode === 'dnd' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Jadwal Drag &amp; Drop
+            </button>
             <button
               type="button"
               onClick={() => setViewMode('per-guru')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
                 viewMode === 'per-guru' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -496,7 +549,7 @@ export function AdminCurriculumSchedule({
             <button
               type="button"
               onClick={() => setViewMode('matriks')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-colors whitespace-nowrap shrink-0 ${
                 viewMode === 'matriks' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -504,6 +557,20 @@ export function AdminCurriculumSchedule({
             </button>
           </div>
         </div>
+
+        {/* View 0: Papan Jadwal Drag & Drop (Hari × Slot Waktu) */}
+        {viewMode === 'dnd' && (
+          <ScheduleDragDropBoard
+            classes={filteredClasses}
+            allClasses={database.master_kelas}
+            enrollments={database.siswa_kelas}
+            daysOfWeek={DAYS_OF_WEEK}
+            onMoveSchedule={handleMoveScheduleSlot}
+            onSwapSchedule={handleSwapScheduleSlots}
+            onEditClass={startEdit}
+            onPrefillSlot={handlePrefillEmptySlot}
+          />
+        )}
 
         {/* View 1: Daftar per Guru */}
         {viewMode === 'per-guru' && (

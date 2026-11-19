@@ -78,6 +78,87 @@ import {
   Menu,
 } from 'lucide-react';
 
+const TUTOR_TAB_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard Tutor',
+  'jadwal-guru': 'Jadwal & Kelas Saya',
+  input: 'Input Presensi & Nilai',
+  crud: 'Riwayat & CRUD Data',
+  rekap: 'Rekapitulasi Kelas',
+  'scan-gerbang': 'Scan Hadir & Pulang',
+  'rapor-pekanan': 'Rapor Pekanan',
+  'rapor-tengah-semester': 'Rapor Tengah Semester',
+  'rapor-semester': 'Rapor Semester',
+  'konseling-guru': 'Perizinan & Konseling',
+  cbt: 'Ujian CBT (KKM 85)',
+  tugas: 'Kelola Tugas & PR',
+  virtual: 'Kelas Virtual & Forum',
+  maktabah: 'Digital Maktabah',
+  pengumuman: 'Pengumuman Sekolah',
+};
+
+const STUDENT_TAB_LABELS: Record<string, string> = {
+  radar: 'Potensi 360°',
+  harian: 'Report Harian',
+  'hadir-pulang': 'Jam Hadir & Pulang',
+  jadwal: 'Jadwal KBM',
+  pengumuman: 'Pengumuman Sekolah',
+  grafik: 'Grafik Nilai (KKM 85)',
+  pekanan: 'Rapor Pekanan Guru',
+  bulanan: 'Rapor Bulanan',
+  'tengah-semester': 'Rapor Tengah Semester',
+  semester: 'Rapor Semester',
+  mutabaah: "Mutaba'ah & Tahfidz",
+  adab: 'Bintang Akhlak & Adab',
+  'prestasi-santri': 'Prestasi & Portofolio',
+  ekskul: 'Ekstrakurikuler',
+  'izin-santri': 'Izin & Sakit Online',
+  'keuangan-santri': 'Keuangan & Tagihan SPP',
+  kartu: 'Kartu Santri Smart ID',
+  cbt: 'Ujian CBT (KKM 85)',
+  tugas: 'Tugas & PR',
+  virtual: 'Kelas Virtual & Forum',
+  maktabah: 'Digital Maktabah',
+};
+
+const ADMIN_TAB_LABELS: Record<string, string> = {
+  monitoring: 'Monitoring Central',
+  'kurikulum-jadwal': 'Jadwal & Kelas Guru',
+  'kurikulum-siswa': 'Siswa Masuk & Keluar',
+  'direktori-alumni': 'Direktori Alumni',
+  'konseling-admin': 'Izin & Konseling Santri',
+  'scan-gerbang': 'Scan Hadir & Pulang',
+  print: 'Cetak Rapor Bulanan',
+  'rapor-pekanan': 'Rapor Pekanan Ortu',
+  'rapor-tengah-semester': 'Rapor Tengah Semester',
+  'rapor-semester': 'Rapor Semester',
+  insight: 'Auto AI Insight',
+  'keuangan-divisi': 'Divisi Keuangan & SPP',
+  fee: 'Rekapitulasi Honor Tutor',
+  'inventaris-aset': 'Inventaris Aset',
+  tugas: 'Monitoring Tugas',
+  cbt: 'Pusat Ujian CBT',
+  virtual: 'Ruang Virtual',
+  maktabah: 'Digital Maktabah',
+  pengumuman: 'Pengumuman Sekolah',
+};
+
+function getActiveSectionContext(
+  user: ActiveUser | null,
+  activeTab: string,
+  studentTab: StudentPortalTab
+): string {
+  if (!user) {
+    return 'BSD City, Tangerang Selatan · Learning Management System';
+  }
+  if (user.role === 'tutor') {
+    return `Portal Guru · ${TUTOR_TAB_LABELS[activeTab] || 'Ruang Kerja Pendidik'}`;
+  }
+  if (user.role === 'siswa') {
+    return `Portal Santri & Orang Tua · ${STUDENT_TAB_LABELS[studentTab] || 'Laporan Santri'}`;
+  }
+  return `Portal Admin · ${ADMIN_TAB_LABELS[activeTab] || 'Kendali Lembaga'}`;
+}
+
 function LMSApp() {
   const { showToast } = useToast();
 
@@ -329,18 +410,18 @@ function LMSApp() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800">
-      {/* Top Brand Accent Line (Blue, Orange, Green) */}
-      <div className="h-1.5 bg-gradient-to-r from-blue-700 via-orange-500 to-emerald-500 w-full sticky top-0 z-50" />
+      {/* Top Brand Accent Line */}
+      <div className="h-1 bg-gradient-to-r from-blue-700 via-slate-800 to-emerald-600 w-full sticky top-0 z-50" />
 
-      {/* Slim Top Header (Brand, User & Sync only — all features live in Left Sidebar) */}
-      <header className="print:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
-        <div className="px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          {/* Left: Mobile Drawer Trigger + Logo & Brand */}
+      {/* Slim Top Header */}
+      <header className="print:hidden sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200">
+        <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+          {/* Left: Mobile Drawer Trigger + Logo & Contextual Subtitle */}
           <div className="flex items-center gap-3 min-w-0">
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
-              className="md:hidden p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer shrink-0"
+              className="md:hidden p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer shrink-0"
               aria-label="Buka Menu Fitur"
               title="Buka Menu Fitur"
             >
@@ -350,86 +431,61 @@ function LMSApp() {
             <img
               src="/assets/aistudio/AL-WILDAN_ISLAMIC_SCHOOL__1__98f2aca5.png"
               alt="Logo AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY"
-              className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-full bg-white p-0.5 shadow-sm border border-slate-200 shrink-0"
+              className="w-8 h-8 sm:w-9 sm:h-9 object-contain rounded-full bg-white p-0.5 border border-slate-200 shrink-0"
             />
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm sm:text-base font-extrabold text-blue-950 tracking-tight leading-tight truncate">
-                  AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
-                </h1>
-                <span className="hidden sm:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-                  Google Sheets Sync
-                </span>
-                <span className="hidden md:inline-block text-[10px] font-bold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-200 shrink-0">
-                  KKM 85
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium hidden sm:block">
-                BSD City, Tangerang Selatan · Learning Management System (LMS)
+              <h1 className="text-sm font-extrabold text-slate-900 tracking-tight leading-tight truncate">
+                AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY
+              </h1>
+              <p className="text-[11px] text-slate-500 font-medium truncate hidden sm:block">
+                {getActiveSectionContext(currentUser, activeTab, studentTab)}
               </p>
             </div>
           </div>
 
           {/* Right Header Identity & Quick Sync */}
           <div className="flex items-center gap-2 shrink-0">
-            {currentUser && (
-              <div className="hidden sm:flex items-center gap-2">
-                {currentUser.role === 'tutor' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-100 text-blue-900 text-xs font-black border border-blue-200 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                    <span>PORTAL GURU</span>
-                  </span>
-                )}
-                {currentUser.role === 'siswa' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-900 text-xs font-black border border-emerald-200 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
-                    <span>PORTAL SANTRI</span>
-                  </span>
-                )}
-                {currentUser.role === 'admin' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-100 text-orange-900 text-xs font-black border border-orange-200 shadow-2xs">
-                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                    <span>PORTAL ADMIN</span>
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Quick Refresh Data */}
             <button
+              type="button"
               onClick={handleQuickSync}
               disabled={isRefreshing}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
               title="Sinkronkan data"
+              aria-label="Sinkronkan data"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-blue-600' : ''}`} />
             </button>
 
-            {/* User Profile & Logout */}
             {currentUser ? (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                <div className="hidden md:flex flex-col text-right">
-                  <span className="text-xs font-bold text-slate-900 truncate max-w-[140px]">
+              <div className="flex items-center gap-2.5 pl-2.5 border-l border-slate-200">
+                <div className="hidden md:flex flex-col text-right leading-tight">
+                  <span className="text-xs font-bold text-slate-900 truncate max-w-[160px]">
                     {currentUser.name}
                   </span>
-                  <span className="text-[10px] text-slate-500 font-mono">
-                    {currentUser.role === 'tutor' ? 'Tutor Pengampu' : currentUser.role === 'siswa' ? 'Santri' : 'Admin Lembaga'}
+                  <span className="text-[11px] text-slate-500">
+                    {currentUser.role === 'tutor'
+                      ? 'Guru / Tutor'
+                      : currentUser.role === 'siswa'
+                        ? 'Santri & Wali'
+                        : 'Administrator'}
                   </span>
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleLogout}
-                  className="py-1.5 px-3 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                  className="py-1.5 px-3 rounded-lg border border-slate-200 hover:border-rose-200 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
                   title="Keluar dari akun ini dan kembali ke pemilihan portal"
                 >
-                  <LogOut className="w-3.5 h-3.5 text-rose-600" />
+                  <LogOut className="w-3.5 h-3.5" />
                   <span>Keluar</span>
                 </button>
               </div>
             ) : (
               <button
+                type="button"
                 onClick={() => setShowAuthModal(true)}
-                className="py-1.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                className="py-1.5 px-3.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
               >
                 <span>Masuk Portal</span>
               </button>

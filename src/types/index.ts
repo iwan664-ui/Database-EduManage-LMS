@@ -6,6 +6,7 @@ export interface MasterSiswa {
   cabang: string;
   siswa: string;
   email_siswa: string;
+  email_wali?: string;
 }
 
 export interface MasterGuru {
@@ -358,10 +359,29 @@ export interface WeeklyReportItem {
   rekomendasi_ortu: string;
   kontak_wa_ortu?: string;
   email_ortu?: string;
+  email_tujuan?: string;
+  email_dikirim_pada?: string;
   channels: WeeklyReportChannel[];
   status_kirim: 'Terkirim' | 'Dibaca Orang Tua';
   dikirim_pada: string; // ISO string
   dibaca_pada?: string; // ISO string
+}
+
+export interface MonthlyReportEmailLog {
+  id: string;
+  siswa: string;
+  id_kelas: string;
+  kelas: string;
+  mapel: string;
+  bulan: string;
+  tahun: number;
+  email_wali: string;
+  rata_nilai: number;
+  persen_kehadiran: number;
+  status_kkm: string;
+  metode: 'Aplikasi Email (Mailto)' | 'Google Apps Script' | 'Salin Konten';
+  dikirim_oleh: string;
+  dikirim_pada: string; // ISO string
 }
 
 // Presensi Gerbang & Kelas Real-Time (Jam Masuk & Jam Pulang)

@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { ActiveUser, DatabaseState, WeeklyReportChannel, WeeklyReportItem } from '../../types';
 import { WeeklyReportService } from '../../services/weeklyReportService';
+import { EmailReportItemPayload, ParentReportEmailService } from '../../services/parentReportEmailService';
 import { PdfExportService } from '../../services/pdfExportService';
+import { EmailDispatchModal } from '../shared/EmailDispatchModal';
 import { useToast } from '../Toast';
 import {
   Send,
@@ -94,6 +96,10 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
   // Editable draft for the selected student
   const [draft, setDraft] = useState<WeeklyReportItem | null>(null);
   const [copiedWa, setCopiedWa] = useState<boolean>(false);
+  const [copiedEmail, setCopiedEmail] = useState<boolean>(false);
+  const [showBatchEmailModal, setShowBatchEmailModal] = useState<boolean>(false);
+  const [emailModalItems, setEmailModalItems] = useState<EmailReportItemPayload[]>([]);
+  const [contactTick, setContactTick] = useState<number>(0);
 
   // Rebuild draft whenever student/class/date changes
   useEffect(() => {
@@ -150,29 +156,103 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
     setEndDate(e.toISOString().split('T')[0]);
   };
 
-  const handleSendSingle = (channel: WeeklyReportChannel) => {
+  const handleSendSingle = (channel: WeeklyReportChannel, overrideEmail?: string) => {
     if (!draft) return;
+    const targetEmail = (overrideEmail ?? draft.email_ortu ?? '').trim();
+    if (channel === 'Email' && !ParentReportEmailService.isValidEmail(targetEmail)) {
+      showToast('Email Wali Belum Valid', `Mohon isi alamat email wali santri yang valid untuk ${draft.siswa}.`, 'warning');
+      return;
+    }
+
     const channels = Array.from(new Set<WeeklyReportChannel>([...draft.channels, 'Portal Walmur', channel]));
+    const nowIso = new Date().toISOString();
     const updatedItem: WeeklyReportItem = {
       ...draft,
+      email_ortu: targetEmail,
+      email_tujuan: channel === 'Email' ? targetEmail : draft.email_tujuan,
+      email_dikirim_pada: channel === 'Email' ? nowIso : draft.email_dikirim_pada,
       periode_label: WeeklyReportService.formatPeriodLabel(startDate, endDate),
       tanggal_mulai: startDate,
       tanggal_selesai: endDate,
       channels,
-      dikirim_pada: new Date().toISOString(),
+      dikirim_pada: nowIso,
     };
     const updatedList = WeeklyReportService.sendReport(updatedItem);
     setSentReports(updatedList);
     setDraft(updatedItem);
+    setContactTick((t) => t + 1);
 
     if (channel === 'PDF') {
       PdfExportService.exportWeeklyReportPdf(updatedItem);
       showToast('PDF Diunduh & Tercatat', `Rapor pekanan ${updatedItem.siswa} tersimpan dan PDF berhasil diunduh.`, 'success');
     } else if (channel === 'Portal Walmur') {
       showToast('Rapor Pekanan Terkirim', `Rapor pekanan untuk orang tua ${updatedItem.siswa} telah dikirim ke Portal Wali Murid.`, 'success');
+    } else if (channel === 'Email') {
+      showToast('Email Rapor Tercatat', `Rapor pekanan ${updatedItem.siswa} dikirim ke email wali ${targetEmail}.`, 'success');
     } else {
       showToast(`Dikirim via ${channel}`, `Rapor pekanan ${updatedItem.siswa} tercatat terkirim melalui ${channel}.`, 'success');
     }
+  };
+
+  const handleOpenBatchEmailModal = () => {
+    if (classStudents.length === 0 || !selectedClassId) return;
+    const payloads: EmailReportItemPayload[] = classStudents.map((st) => {
+      const existing = sentReports.find(
+        (r) =>
+          r.siswa === st.siswa &&
+          r.id_kelas === selectedClassId &&
+          r.tanggal_mulai === startDate &&
+          r.tanggal_selesai === endDate
+      );
+      const sourceReport =
+        existing ||
+        WeeklyReportService.buildStudentWeeklyDraft({
+          database,
+          studentName: st.siswa,
+          classId: selectedClassId,
+          tutorName: user.name,
+          startDate,
+          endDate,
+        });
+      return ParentReportEmailService.buildWeeklyEmailPayload(sourceReport);
+    });
+    setEmailModalItems(payloads);
+    setShowBatchEmailModal(true);
+  };
+
+  const handleRecordedWeeklyEmails = (sentItems: EmailReportItemPayload[]) => {
+    if (!selectedClassId || sentItems.length === 0) return;
+    const nowIso = new Date().toISOString();
+    const updatedBatch: WeeklyReportItem[] = sentItems.map((it) => {
+      const existing = sentReports.find(
+        (r) =>
+          r.siswa === it.siswa &&
+          r.id_kelas === selectedClassId &&
+          r.tanggal_mulai === startDate &&
+          r.tanggal_selesai === endDate
+      );
+      const base =
+        existing ||
+        WeeklyReportService.buildStudentWeeklyDraft({
+          database,
+          studentName: it.siswa,
+          classId: selectedClassId,
+          tutorName: user.name,
+          startDate,
+          endDate,
+        });
+      return {
+        ...base,
+        email_ortu: it.to.trim(),
+        email_tujuan: it.to.trim(),
+        email_dikirim_pada: nowIso,
+        channels: Array.from(new Set<WeeklyReportChannel>([...base.channels, 'Portal Walmur', 'Email'])),
+        dikirim_pada: nowIso,
+      };
+    });
+    const updatedList = WeeklyReportService.sendBatchReports(updatedBatch);
+    setSentReports(updatedList);
+    setContactTick((t) => t + 1);
   };
 
   const handleSendAllClass = () => {
@@ -209,6 +289,19 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
     setCopiedWa(true);
     setTimeout(() => setCopiedWa(false), 2500);
     handleSendSingle('WhatsApp');
+  };
+
+  const handleCopyEmailBody = () => {
+    if (!draft) return;
+    const payload = ParentReportEmailService.buildWeeklyEmailPayload(draft);
+    navigator.clipboard.writeText(`Kepada: ${payload.to}\nSubjek: ${payload.subject}\n\n${payload.body}`);
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 2500);
+    if (ParentReportEmailService.isValidEmail(payload.to)) {
+      handleSendSingle('Email', payload.to);
+    } else {
+      showToast('Format Email Disalin', 'Isi email rapor telah disalin. Lengkapi email wali terlebih dahulu.', 'info');
+    }
   };
 
   const handleDeleteHistory = (id: string) => {
@@ -369,15 +462,27 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleSendAllClass}
-            disabled={classStudents.length === 0}
-            className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>Kirim Massal ke Semua Ortu ({classStudents.length} Santri)</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleOpenBatchEmailModal}
+              disabled={classStudents.length === 0}
+              className="py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>Kirim Email ke Wali Masing-Masing ({classStudents.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSendAllClass}
+              disabled={classStudents.length === 0}
+              className="py-2 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>Kirim ke Portal Ortu ({classStudents.length})</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -412,6 +517,7 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
                 </div>
               ) : (
                 classStudents.map((st, idx) => {
+                  void contactTick;
                   const sentItem = sentReports.find(
                     (r) =>
                       r.siswa === st.siswa &&
@@ -419,7 +525,9 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
                       r.tanggal_mulai === startDate &&
                       r.tanggal_selesai === endDate
                   );
+                  const guardianEmail = ParentReportEmailService.getGuardianEmail(st.siswa, st.email_siswa);
                   const isSelected = selectedStudentName === st.siswa;
+                  const hasSentEmail = sentItem?.channels.includes('Email');
 
                   return (
                     <button
@@ -428,7 +536,7 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
                       onClick={() => setSelectedStudentName(st.siswa)}
                       className={`w-full text-left p-3.5 flex items-center justify-between gap-2 transition-colors cursor-pointer ${
                         isSelected
-                          ? 'bg-blue-50/90 border-l-4 border-l-blue-600'
+                          ? 'bg-blue-50/90 ring-1 ring-inset ring-blue-300'
                           : 'hover:bg-slate-50'
                       }`}
                     >
@@ -436,25 +544,35 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
                         <div className={`text-xs font-bold truncate ${isSelected ? 'text-blue-900' : 'text-slate-900'}`}>
                           {st.siswa}
                         </div>
-                        <div className="text-[10px] text-slate-500 truncate mt-0.5">
-                          {st.email_siswa}
+                        <div className="text-[10px] font-mono text-slate-500 truncate mt-0.5">
+                          Wali: {guardianEmail}
                         </div>
                       </div>
-                      <div className="shrink-0">
+                      <div className="shrink-0 text-right">
                         {sentItem ? (
-                          sentItem.status_kirim === 'Dibaca Orang Tua' ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                              <Eye className="w-3 h-3" /> Dibaca
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                              <CheckCircle2 className="w-3 h-3" /> Terkirim
-                            </span>
-                          )
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold">
-                            Draf
+                          <span
+                            className={`inline-flex items-center gap-1 text-[10px] font-bold ${
+                              sentItem.status_kirim === 'Dibaca Orang Tua'
+                                ? 'text-blue-700'
+                                : 'text-emerald-700'
+                            }`}
+                          >
+                            {sentItem.status_kirim === 'Dibaca Orang Tua' ? (
+                              <>
+                                <Eye className="w-3 h-3" /> Dibaca
+                              </>
+                            ) : hasSentEmail ? (
+                              <>
+                                <Mail className="w-3 h-3" /> Email Terkirim
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="w-3 h-3" /> Terkirim
+                              </>
+                            )}
                           </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-slate-400">Draf</span>
                         )}
                       </div>
                     </button>
@@ -621,31 +739,84 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Email Orang Tua / Wali
+                        Email Orang Tua / Wali Santri
                       </label>
-                      <input
-                        type="email"
-                        placeholder="ortu@email.com"
-                        value={draft.email_ortu || ''}
-                        onChange={(e) => setDraft({ ...draft, email_ortu: e.target.value })}
-                        className="w-full text-xs font-mono rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
-                      />
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="email"
+                          placeholder="wali.santri@email.com"
+                          value={draft.email_ortu || ''}
+                          onChange={(e) => setDraft({ ...draft, email_ortu: e.target.value })}
+                          className="flex-1 text-xs font-mono rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const emailVal = (draft.email_ortu || '').trim();
+                            if (!ParentReportEmailService.isValidEmail(emailVal)) {
+                              showToast('Email Tidak Valid', 'Masukkan format email wali santri yang benar.', 'warning');
+                              return;
+                            }
+                            ParentReportEmailService.saveGuardianContact(draft.siswa, {
+                              wa: draft.kontak_wa_ortu || '',
+                              email: emailVal,
+                            });
+                            setContactTick((t) => t + 1);
+                            showToast('Email Wali Tersimpan', `Email wali ${draft.siswa} diperbarui menjadi ${emailVal}.`, 'success');
+                          }}
+                          className="py-2 px-3 rounded-xl border border-slate-300 bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold whitespace-nowrap shrink-0 cursor-pointer"
+                        >
+                          Simpan
+                        </button>
+                      </div>
                     </div>
                   </div>
 
                   {/* Multi-Channel Action Bar */}
                   <div className="pt-4 border-t border-slate-200 space-y-3">
-                    <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
-                      Pilih Kanal Pengiriman ke Orang Tua:
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+                        Pilih Kanal Pengiriman ke Orang Tua:
+                      </span>
+                      {draft.email_tujuan && (
+                        <span className="text-[11px] text-emerald-700 font-medium">
+                          Terakhir dikirim ke email: <span className="font-mono">{draft.email_tujuan}</span>
+                        </span>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2.5">
+                      <a
+                        href={WeeklyReportService.buildMailtoUrl(draft)}
+                        onClick={(e) => {
+                          if (!ParentReportEmailService.isValidEmail(draft.email_ortu || '')) {
+                            e.preventDefault();
+                            showToast('Email Wali Kosong/Tidak Valid', 'Mohon isi email wali santri terlebih dahulu.', 'warning');
+                            return;
+                          }
+                          handleSendSingle('Email');
+                        }}
+                        className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        <span>Kirim ke Email Wali ({draft.email_ortu || '-'})</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={handleCopyEmailBody}
+                        className="py-2.5 px-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                      >
+                        {copiedEmail ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedEmail ? 'Email Disalin!' : 'Salin Isi Email'}</span>
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handleSendSingle('Portal Walmur')}
-                        className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="py-2.5 px-3.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
                       >
                         <Send className="w-3.5 h-3.5" />
-                        <span>Kirim ke Portal Orang Tua</span>
+                        <span>Portal Orang Tua</span>
                       </button>
 
                       <a
@@ -653,37 +824,28 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => handleSendSingle('WhatsApp')}
-                        className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition-all"
+                        className="py-2.5 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap shrink-0"
                       >
                         <MessageCircle className="w-3.5 h-3.5" />
-                        <span>Kirim via WhatsApp</span>
+                        <span>WhatsApp</span>
                       </a>
 
                       <button
                         type="button"
                         onClick={handleCopyWhatsApp}
-                        className="py-2.5 px-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="py-2.5 px-3.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
                       >
                         {copiedWa ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedWa ? 'Tersalin!' : 'Salin Format WA'}</span>
+                        <span>{copiedWa ? 'Tersalin!' : 'Salin WA'}</span>
                       </button>
-
-                      <a
-                        href={WeeklyReportService.buildMailtoUrl(draft)}
-                        onClick={() => handleSendSingle('Email')}
-                        className="py-2.5 px-3.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200 text-xs font-bold flex items-center gap-1.5 transition-all"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                        <span>Kirim Email</span>
-                      </a>
 
                       <button
                         type="button"
                         onClick={() => handleSendSingle('PDF')}
-                        className="py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        className="py-2.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0"
                       >
                         <FileText className="w-3.5 h-3.5" />
-                        <span>Unduh PDF Resmi</span>
+                        <span>Unduh PDF</span>
                       </button>
                     </div>
                   </div>
@@ -734,31 +896,29 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
                         <div className="text-[11px] text-slate-500">
                           {rep.kelas} · {rep.guru}
                         </div>
+                        {(rep.email_tujuan || rep.email_ortu) && (
+                          <div className="text-[10px] font-mono text-blue-700 mt-0.5">
+                            Email Wali: {rep.email_tujuan || rep.email_ortu}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="font-semibold text-slate-800">{rep.periode_label}</div>
-                        <div className="text-[10px] text-slate-400 font-mono">
+                        <div className="text-[10px] text-slate-400 font-mono tabular-nums">
                           Dikirim: {new Date(rep.dikirim_pada).toLocaleDateString('id-ID')}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center font-mono font-bold text-emerald-700">
+                      <td className="px-4 py-3 text-center font-mono font-bold text-emerald-700 tabular-nums">
                         {rep.persen_kehadiran}%
                       </td>
-                      <td className="px-4 py-3 text-center font-mono font-bold">
+                      <td className="px-4 py-3 text-center font-mono font-bold tabular-nums">
                         <span className={rep.rata_nilai >= 85 ? 'text-blue-700' : 'text-rose-600'}>
                           {rep.rata_nilai > 0 ? rep.rata_nilai : '-'}
                         </span>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {rep.channels.map((ch) => (
-                            <span
-                              key={ch}
-                              className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-semibold"
-                            >
-                              {ch}
-                            </span>
-                          ))}
+                        <div className="text-[11px] text-slate-700 font-medium">
+                          {rep.channels.join(' · ')}
                         </div>
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -800,6 +960,15 @@ export function TutorWeeklyReportSender({ user, database }: TutorWeeklyReportSen
           )}
         </div>
       )}
+
+      <EmailDispatchModal
+        isOpen={showBatchEmailModal}
+        onClose={() => setShowBatchEmailModal(false)}
+        title="Kirim Rapor Pekanan ke Email Wali Santri"
+        subtitle={`Periode ${WeeklyReportService.formatPeriodLabel(startDate, endDate)} — setiap santri dikirimkan ke alamat email wali masing-masing.`}
+        items={emailModalItems}
+        onEmailRecorded={(sentItems) => handleRecordedWeeklyEmails(sentItems)}
+      />
     </div>
   );
 }

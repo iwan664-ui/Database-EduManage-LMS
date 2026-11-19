@@ -218,6 +218,88 @@ export class CurriculumService {
   }
 
   /**
+   * Pindahkan satu kelas ke hari & slot waktu baru (Drag & Drop)
+   */
+  static moveScheduleSlot(
+    id_kelas: string,
+    newHari: string,
+    newWaktu: string
+  ): { success: boolean; message: string; schedule?: MasterKelas } {
+    const cleanHari = SecurityService.sanitizeText(newHari, 24);
+    const cleanWaktu = SecurityService.sanitizeText(newWaktu, 40);
+    if (!cleanHari || !cleanWaktu) {
+      return { success: false, message: 'Hari dan slot waktu tujuan tidak valid.' };
+    }
+
+    const db = SheetsService.getLocalDatabase();
+    const target = db.master_kelas.find((k) => k.id_kelas === id_kelas);
+    if (!target) {
+      return { success: false, message: 'Kelas tidak ditemukan.' };
+    }
+
+    const updatedItem: MasterKelas = {
+      ...target,
+      hari: cleanHari,
+      waktu: cleanWaktu,
+    };
+
+    const updatedMaster = db.master_kelas.map((k) => (k.id_kelas === id_kelas ? updatedItem : k));
+    const updatedEnrollments = db.siswa_kelas.map((sk) =>
+      sk.id_kelas === id_kelas ? { ...sk, hari: cleanHari, waktu: cleanWaktu } : sk
+    );
+
+    SheetsService.saveLocalDatabase({
+      ...db,
+      master_kelas: updatedMaster,
+      siswa_kelas: updatedEnrollments,
+    });
+
+    return {
+      success: true,
+      message: `${target.mapel} (${target.kelas}) dipindahkan ke ${cleanHari}, ${cleanWaktu}.`,
+      schedule: updatedItem,
+    };
+  }
+
+  /**
+   * Tukar slot hari & waktu antara dua kelas
+   */
+  static swapScheduleSlots(
+    idKelasA: string,
+    idKelasB: string
+  ): { success: boolean; message: string } {
+    const db = SheetsService.getLocalDatabase();
+    const classA = db.master_kelas.find((k) => k.id_kelas === idKelasA);
+    const classB = db.master_kelas.find((k) => k.id_kelas === idKelasB);
+    if (!classA || !classB) {
+      return { success: false, message: 'Salah satu kelas tidak ditemukan.' };
+    }
+
+    const updatedMaster = db.master_kelas.map((k) => {
+      if (k.id_kelas === idKelasA) return { ...k, hari: classB.hari, waktu: classB.waktu };
+      if (k.id_kelas === idKelasB) return { ...k, hari: classA.hari, waktu: classA.waktu };
+      return k;
+    });
+
+    const updatedEnrollments = db.siswa_kelas.map((sk) => {
+      if (sk.id_kelas === idKelasA) return { ...sk, hari: classB.hari, waktu: classB.waktu };
+      if (sk.id_kelas === idKelasB) return { ...sk, hari: classA.hari, waktu: classA.waktu };
+      return sk;
+    });
+
+    SheetsService.saveLocalDatabase({
+      ...db,
+      master_kelas: updatedMaster,
+      siswa_kelas: updatedEnrollments,
+    });
+
+    return {
+      success: true,
+      message: `Slot ${classA.mapel} (${classA.kelas}) ditukar dengan ${classB.mapel} (${classB.kelas}).`,
+    };
+  }
+
+  /**
    * Tambah Siswa Baru (Siswa Masuk) + Penempatan Kelas Awal
    */
   static admitStudent(payload: {

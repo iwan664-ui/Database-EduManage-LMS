@@ -1,19 +1,45 @@
 import React, { useState, useMemo } from 'react';
-import { DatabaseState, MasterKelas } from '../../types';
-import { Printer, Download, Filter, Calendar, BookOpen, CheckCircle, AlertCircle, FileText } from 'lucide-react';
+import { DatabaseState, MonthlyReportEmailLog } from '../../types';
+import {
+  Printer,
+  Download,
+  FileText,
+  Mail,
+  CheckCircle2,
+  Edit3,
+  Clock,
+} from 'lucide-react';
 import { PdfExportService } from '../../services/pdfExportService';
 import { SecurityService } from '../../services/securityService';
+import {
+  EmailReportItemPayload,
+  ParentReportEmailService,
+} from '../../services/parentReportEmailService';
+import { EmailDispatchModal } from '../shared/EmailDispatchModal';
+import { useToast } from '../Toast';
 
 interface AdminMonthlyReportPrintProps {
   database: DatabaseState;
 }
 
 export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintProps) {
+  const { showToast } = useToast();
   const [selectedClassId, setSelectedClassId] = useState<string>(
     database.master_kelas[0]?.id_kelas || ''
   );
   const [selectedMonth, setSelectedMonth] = useState<string>('Oktober');
   const [selectedYear, setSelectedYear] = useState<number>(2026);
+  const [emailLogs, setEmailLogs] = useState<MonthlyReportEmailLog[]>(() =>
+    ParentReportEmailService.getMonthlyEmailLogs()
+  );
+  const [contactTick, setContactTick] = useState<number>(0);
+  const [editingEmailStudent, setEditingEmailStudent] = useState<string | null>(null);
+  const [editingEmailValue, setEditingEmailValue] = useState<string>('');
+  const [showEmailModal, setShowEmailModal] = useState<boolean>(false);
+  const [emailModalItems, setEmailModalItems] = useState<EmailReportItemPayload[]>([]);
+  const [emailModalTitle, setEmailModalTitle] = useState<string>(
+    'Kirim Rapor Bulanan ke Email Wali Santri'
+  );
 
   const months = [
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -33,9 +59,17 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
 
   // Absensi & Nilai for this class
   const reportData = useMemo(() => {
+    void contactTick;
     if (!activeClass) return [];
 
     return classStudents.map((st, idx) => {
+      const masterStudent = database.master_siswa.find((s) => s.siswa === st.siswa);
+      const emailWali = ParentReportEmailService.getGuardianEmail(
+        st.siswa,
+        st.email_siswa || masterStudent?.email_siswa,
+        masterStudent?.email_wali
+      );
+
       // Absensi
       const studentAbs = database.log_absensi.filter(
         (a) => a.id_kelas === activeClass.id_kelas && a.siswa === st.siswa
@@ -59,11 +93,19 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
 
       // Ambil catatan terakhir
       const lastNote = studentGrades[studentGrades.length - 1]?.catatan || '';
+      const sentLog = emailLogs.find(
+        (l) =>
+          l.siswa === st.siswa &&
+          l.id_kelas === activeClass.id_kelas &&
+          l.bulan === selectedMonth &&
+          l.tahun === selectedYear
+      );
 
       return {
         no: idx + 1,
         siswa: st.siswa,
-        email: st.email_siswa,
+        email: emailWali,
+        emailWali,
         hadir,
         izin,
         sakit,
@@ -74,9 +116,20 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
         avg,
         status: avg >= 85 ? 'Tuntas' : avg > 0 ? 'Remedial' : 'Belum Ada Nilai',
         note: lastNote,
+        sentLog,
       };
     });
-  }, [activeClass, classStudents, database.log_absensi, database.log_nilai]);
+  }, [
+    activeClass,
+    classStudents,
+    database.log_absensi,
+    database.log_nilai,
+    database.master_siswa,
+    emailLogs,
+    selectedMonth,
+    selectedYear,
+    contactTick,
+  ]);
 
   const aggregates = useMemo(() => {
     if (reportData.length === 0) return { avgPresence: 0, avgGrade: 0, tuntasPercent: 0 };
@@ -92,12 +145,88 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
     window.print();
   };
 
+  const buildPayloadForRow = (row: (typeof reportData)[number]): EmailReportItemPayload => {
+    return ParentReportEmailService.buildMonthlyEmailPayload(
+      {
+        siswa: row.siswa,
+        kelas: activeClass?.kelas || '',
+        mapel: activeClass?.mapel || '',
+        cabang: activeClass?.cabang || 'Kampus Utama BSD City',
+        guru: activeClass?.guru || 'Tutor Pengampu',
+        bulan: selectedMonth,
+        tahun: selectedYear,
+        hadir: row.hadir,
+        izin: row.izin,
+        sakit: row.sakit,
+        alfa: row.alfa,
+        presenceRate: row.presenceRate,
+        avg: row.avg,
+        status: row.status,
+        note: row.note,
+      },
+      row.emailWali
+    );
+  };
+
+  const handleOpenBatchMonthlyEmail = () => {
+    if (!activeClass || reportData.length === 0) return;
+    setEmailModalItems(reportData.map(buildPayloadForRow));
+    setEmailModalTitle(`Kirim Rapor Bulanan (${selectedMonth} ${selectedYear}) ke Email Wali`);
+    setShowEmailModal(true);
+  };
+
+  const handleOpenSingleMonthlyEmail = (row: (typeof reportData)[number]) => {
+    if (!activeClass) return;
+    setEmailModalItems([buildPayloadForRow(row)]);
+    setEmailModalTitle(`Kirim Rapor Bulanan ${row.siswa} ke Email Wali`);
+    setShowEmailModal(true);
+  };
+
+  const handleSaveInlineGuardianEmail = (siswa: string) => {
+    const trimmed = editingEmailValue.trim();
+    if (!ParentReportEmailService.isValidEmail(trimmed)) {
+      showToast('Email Tidak Valid', 'Masukkan alamat email wali santri yang valid.', 'warning');
+      return;
+    }
+    ParentReportEmailService.saveGuardianEmail(siswa, trimmed);
+    setEditingEmailStudent(null);
+    setContactTick((t) => t + 1);
+    showToast('Email Wali Disimpan', `Email wali ${siswa} disimpan ke ${trimmed}.`, 'success');
+  };
+
+  const handleRecordedMonthlyEmails = (
+    sentItems: EmailReportItemPayload[],
+    method: 'Aplikasi Email (Mailto)' | 'Google Apps Script' | 'Salin Konten'
+  ) => {
+    if (!activeClass || sentItems.length === 0) return;
+    const entries = sentItems.map((it) => {
+      const row = reportData.find((r) => r.siswa === it.siswa);
+      return {
+        siswa: it.siswa,
+        id_kelas: activeClass.id_kelas,
+        kelas: activeClass.kelas,
+        mapel: activeClass.mapel,
+        bulan: selectedMonth,
+        tahun: selectedYear,
+        email_wali: it.to.trim(),
+        rata_nilai: row?.avg ?? 0,
+        persen_kehadiran: row?.presenceRate ?? 0,
+        status_kkm: row?.status || 'Belum Ada Nilai',
+        metode: method,
+        dikirim_oleh: activeClass.guru || 'Admin Akademik',
+      };
+    });
+    const updated = ParentReportEmailService.recordMonthlyEmailSent(entries);
+    setEmailLogs(updated);
+    setContactTick((t) => t + 1);
+  };
+
   const handleExportCsv = () => {
     if (!activeClass) return;
     const headers = [
       'No',
       'Nama Siswa',
-      'Email',
+      'Email Wali Santri',
       'Hadir',
       'Izin',
       'Sakit',
@@ -163,8 +292,18 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
 
           <div className="flex flex-wrap items-center gap-2">
             <button
+              type="button"
+              onClick={handleOpenBatchMonthlyEmail}
+              disabled={reportData.length === 0}
+              className="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
+              title="Kirim laporan bulanan ke masing-masing email wali santri"
+            >
+              <Mail className="w-4 h-4" />
+              <span>Kirim Email ke Wali ({reportData.length})</span>
+            </button>
+            <button
               onClick={handleExportPdf}
-              className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+              className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white text-xs font-bold shadow-sm hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
               title="Unduh langsung sebagai file PDF formal menggunakan jsPDF"
             >
               <FileText className="w-4 h-4 text-emerald-100" />
@@ -172,14 +311,14 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
             </button>
             <button
               onClick={handleExportCsv}
-              className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+              className="py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Download className="w-4 h-4 text-slate-500" />
               <span>Export CSV</span>
             </button>
             <button
               onClick={handlePrint}
-              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer"
+              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
               <Printer className="w-4 h-4" />
               <span>Dialog Cetak</span>
@@ -324,21 +463,23 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
                 <th className="p-2 border border-slate-300 w-20">Nilai Akhir</th>
                 <th className="p-2 border border-slate-300 w-24">Status KKM</th>
                 <th className="p-2 border border-slate-300 text-left">Catatan Perkembangan</th>
+                <th className="p-2 border border-slate-300 text-left print:hidden">Email Wali Santri</th>
+                <th className="p-2 border border-slate-300 w-32 print:hidden">Kirim Email</th>
               </tr>
             </thead>
             <tbody>
               {reportData.map((row, idx) => (
                 <tr key={`report_row_${row.siswa}_${idx}`} className="border-b border-slate-200 print:border-slate-300">
-                  <td className="p-2 border border-slate-300 text-center font-mono">{row.no}</td>
+                  <td className="p-2 border border-slate-300 text-center font-mono tabular-nums">{row.no}</td>
                   <td className="p-2 border border-slate-300 font-bold">{row.siswa}</td>
-                  <td className="p-2 border border-slate-300 text-center font-mono">{row.hadir}</td>
-                  <td className="p-2 border border-slate-300 text-center font-mono">{row.izin}</td>
-                  <td className="p-2 border border-slate-300 text-center font-mono">{row.sakit}</td>
-                  <td className="p-2 border border-slate-300 text-center font-mono">{row.alfa}</td>
-                  <td className="p-2 border border-slate-300 text-center font-mono font-bold">
+                  <td className="p-2 border border-slate-300 text-center font-mono tabular-nums">{row.hadir}</td>
+                  <td className="p-2 border border-slate-300 text-center font-mono tabular-nums">{row.izin}</td>
+                  <td className="p-2 border border-slate-300 text-center font-mono tabular-nums">{row.sakit}</td>
+                  <td className="p-2 border border-slate-300 text-center font-mono tabular-nums">{row.alfa}</td>
+                  <td className="p-2 border border-slate-300 text-center font-mono font-bold tabular-nums">
                     {row.presenceRate}%
                   </td>
-                  <td className="p-2 border border-slate-300 text-center font-mono font-bold text-sm">
+                  <td className="p-2 border border-slate-300 text-center font-mono font-bold text-sm tabular-nums">
                     {row.avg > 0 ? row.avg : '-'}
                   </td>
                   <td className="p-2 border border-slate-300 text-center font-semibold">
@@ -356,6 +497,60 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
                   </td>
                   <td className="p-2 border border-slate-300 text-[11px] text-slate-600 italic">
                     {row.note || '-'}
+                  </td>
+                  <td className="p-2 border border-slate-300 print:hidden">
+                    {editingEmailStudent === row.siswa ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="email"
+                          value={editingEmailValue}
+                          onChange={(e) => setEditingEmailValue(e.target.value)}
+                          className="w-40 px-2 py-1 text-[11px] font-mono rounded border border-blue-400 bg-white focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSaveInlineGuardianEmail(row.siswa)}
+                          className="px-2 py-1 rounded bg-blue-600 text-white text-[10px] font-bold cursor-pointer"
+                        >
+                          Simpan
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="font-mono text-[11px] text-slate-700 truncate max-w-[165px]">
+                          {row.emailWali}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingEmailStudent(row.siswa);
+                            setEditingEmailValue(row.emailWali);
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-1 rounded cursor-pointer shrink-0"
+                          title="Ubah email wali santri"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </td>
+                  <td className="p-2 border border-slate-300 text-center print:hidden">
+                    <div className="flex flex-col items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenSingleMonthlyEmail(row)}
+                        className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold inline-flex items-center gap-1 whitespace-nowrap cursor-pointer"
+                      >
+                        <Mail className="w-3 h-3" />
+                        <span>{row.sentLog ? 'Kirim Ulang' : 'Kirim Email'}</span>
+                      </button>
+                      {row.sentLog && (
+                        <span className="text-[10px] text-emerald-700 font-semibold inline-flex items-center gap-0.5">
+                          <CheckCircle2 className="w-3 h-3" />
+                          {new Date(row.sentLog.dikirim_pada).toLocaleDateString('id-ID')}
+                        </span>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -389,6 +584,82 @@ export function AdminMonthlyReportPrint({ database }: AdminMonthlyReportPrintPro
           </div>
         </div>
       </div>
+
+      {/* Log Pengiriman Email Rapor Bulanan (Hidden during print) */}
+      <div className="print:hidden bg-white rounded-2xl border border-slate-200 p-5 shadow-xs space-y-3 max-w-5xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+              <span>Riwayat Pengiriman Rapor Bulanan ke Email Wali Santri</span>
+            </h3>
+            <p className="text-xs text-slate-500">
+              Catatan rapor bulanan yang sudah dikirimkan ke alamat email masing-masing wali santri.
+            </p>
+          </div>
+          <span className="text-xs font-mono text-slate-500 tabular-nums">
+            {emailLogs.length} Pengiriman Tercatat
+          </span>
+        </div>
+
+        {emailLogs.length === 0 ? (
+          <div className="py-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl">
+            Belum ada pengiriman rapor bulanan via email yang tercatat. Klik tombol &quot;Kirim Email ke Wali&quot; di atas untuk memulai.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-600">
+              <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-700 border-b border-slate-200">
+                <tr>
+                  <th className="px-3 py-2.5 font-bold">Santri & Kelas</th>
+                  <th className="px-3 py-2.5 font-bold">Periode</th>
+                  <th className="px-3 py-2.5 font-bold">Email Wali Tujuan</th>
+                  <th className="px-3 py-2.5 font-bold text-center">Nilai · Hadir</th>
+                  <th className="px-3 py-2.5 font-bold">Metode & Waktu Kirim</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {emailLogs.slice(0, 12).map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50/70">
+                    <td className="px-3 py-2.5">
+                      <div className="font-bold text-slate-900">{log.siswa}</div>
+                      <div className="text-[11px] text-slate-500">
+                        {log.kelas} · {log.mapel}
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 font-semibold text-slate-800">
+                      {log.bulan} {log.tahun}
+                    </td>
+                    <td className="px-3 py-2.5 font-mono text-blue-700">{log.email_wali}</td>
+                    <td className="px-3 py-2.5 text-center font-mono tabular-nums">
+                      {log.rata_nilai > 0 ? log.rata_nilai : '-'} · {log.persen_kehadiran}%
+                    </td>
+                    <td className="px-3 py-2.5 text-[11px] text-slate-500">
+                      <span className="font-semibold text-emerald-700">{log.metode}</span>
+                      <span className="text-slate-300 mx-1" aria-hidden="true">·</span>
+                      <span className="font-mono tabular-nums">
+                        {new Date(log.dikirim_pada).toLocaleString('id-ID', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <EmailDispatchModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        title={emailModalTitle}
+        subtitle={`Laporan Bulanan ${selectedMonth} ${selectedYear} (${activeClass?.kelas || ''} · ${activeClass?.mapel || ''}) dikirim ke masing-masing email wali santri.`}
+        items={emailModalItems}
+        onEmailRecorded={handleRecordedMonthlyEmails}
+      />
     </div>
   );
 }

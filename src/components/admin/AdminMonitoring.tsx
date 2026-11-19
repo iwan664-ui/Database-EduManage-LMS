@@ -332,94 +332,128 @@ export function AdminMonitoring({ database, onNavigateTab }: AdminMonitoringProp
 
   return (
     <div className="space-y-6">
-      {/* Top Banner with Quick Actions */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 md:p-6 text-white shadow-lg space-y-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-xs font-semibold text-slate-200 mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+      {/* Top Banner + Structured Module Launcher */}
+      <div className="bg-slate-900 rounded-2xl p-5 md:p-6 text-white border border-slate-800">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="text-xs font-medium text-slate-300">
               AL-WILDAN 3 BSD CITY · Monitoring Central Administrator
             </div>
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight">
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-white">
               Dashboard Akademik & Operasional
             </h2>
-            <p className="text-xs md:text-sm text-slate-300 mt-1 max-w-xl leading-relaxed">
-              Pantau seluruh aktivitas pembelajaran, presensi, evaluasi nilai siswa di semua cabang, dan kelola honor pengajar.
+            <p className="text-xs md:text-sm text-slate-300 max-w-2xl leading-relaxed">
+              Pantau aktivitas pembelajaran, presensi santri, evaluasi nilai, keuangan divisi, dan honor pengajar secara terpusat.
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <button
-              onClick={() => onNavigateTab('kurikulum-jadwal')}
-              className="py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <CalendarClock className="w-4 h-4" />
-              Jadwal &amp; Kelas Guru
-            </button>
-            <button
-              onClick={() => onNavigateTab('kurikulum-siswa')}
-              className="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <UserPlus className="w-4 h-4" />
-              Siswa Masuk / Keluar
-            </button>
-            <button
-              onClick={() => onNavigateTab('konseling-admin')}
-              className="py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <HeartHandshake className="w-4 h-4" />
-              Izin &amp; Konseling
-            </button>
-            <button
-              onClick={() => onNavigateTab('scan-gerbang')}
-              className="py-2.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <QrCode className="w-4 h-4" />
-              Scan Hadir &amp; Pulang
-            </button>
-            <button
+              type="button"
               onClick={() => onNavigateTab('print')}
-              className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+              className="py-2 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-900 text-xs font-semibold transition-colors flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <FileText className="w-4 h-4" />
-              Cetak Laporan Bulanan
+              <FileText className="w-4 h-4 text-slate-700" />
+              <span>Cetak Rapor Bulanan</span>
             </button>
             <button
+              type="button"
               onClick={() => onNavigateTab('insight')}
-              className="py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
+              className="py-2 px-4 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-semibold transition-colors flex items-center gap-2 whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Sparkles className="w-4 h-4" />
-              Auto AI Insight
-            </button>
-            <button
-              onClick={() => onNavigateTab('keuangan-divisi')}
-              className="py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-extrabold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <Wallet className="w-4 h-4" />
-              Divisi Keuangan &amp; SPP
-            </button>
-            <button
-              onClick={() => onNavigateTab('fee')}
-              className="py-2.5 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <DollarSign className="w-4 h-4" />
-              Rekap Honor Tutor
-            </button>
-            <button
-              onClick={() => onNavigateTab('inventaris-aset')}
-              className="py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <Laptop className="w-4 h-4" />
-              Inventaris Aset
-            </button>
-            <button
-              onClick={() => onNavigateTab('direktori-alumni')}
-              className="py-2.5 px-4 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold shadow transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <GraduationCap className="w-4 h-4" />
-              Direktori Alumni
+              <Sparkles className="w-4 h-4 text-amber-300" />
+              <span>Auto AI Insight</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Structured Quick Module Directory */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs font-semibold text-slate-700">Akses Cepat Modul Administrator</h3>
+          <span className="text-[11px] text-slate-500">Pilih modul untuk membuka halaman kerja</span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+          {[
+            {
+              tab: 'kurikulum-jadwal' as const,
+              title: 'Jadwal & Kelas',
+              desc: 'Atur jadwal guru & kelas',
+              icon: <CalendarClock className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'kurikulum-siswa' as const,
+              title: 'Siswa Masuk/Keluar',
+              desc: 'Mutasi & data santri',
+              icon: <UserPlus className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'direktori-alumni' as const,
+              title: 'Direktori Alumni',
+              desc: 'Sebaran kampus & karier',
+              icon: <GraduationCap className="w-4 h-4 text-emerald-700" />,
+            },
+            {
+              tab: 'keuangan-divisi' as const,
+              title: 'Keuangan & SPP',
+              desc: 'Tagihan & kas divisi',
+              icon: <Wallet className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'konseling-admin' as const,
+              title: 'Izin & Konseling',
+              desc: 'Approval & bimbingan',
+              icon: <HeartHandshake className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'scan-gerbang' as const,
+              title: 'Scan Gerbang QR',
+              desc: 'Monitor hadir & pulang',
+              icon: <QrCode className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'fee' as const,
+              title: 'Rekap Honor Tutor',
+              desc: 'Kalkulasi sesi mengajar',
+              icon: <DollarSign className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'inventaris-aset' as const,
+              title: 'Inventaris Aset',
+              desc: 'Sarpras & perangkat',
+              icon: <Laptop className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'print' as const,
+              title: 'Rapor Bulanan',
+              desc: 'Ekspor PDF & laporan',
+              icon: <FileText className="w-4 h-4 text-slate-700" />,
+            },
+            {
+              tab: 'insight' as const,
+              title: 'Auto AI Insight',
+              desc: 'Analisis capaian siswa',
+              icon: <Sparkles className="w-4 h-4 text-slate-700" />,
+            },
+          ].map((mod) => (
+            <button
+              key={mod.tab}
+              type="button"
+              onClick={() => onNavigateTab(mod.tab)}
+              className="group text-left p-3 rounded-xl bg-slate-50/70 hover:bg-white border border-slate-200 hover:border-slate-300 transition-colors flex items-start gap-2.5 cursor-pointer"
+            >
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0">
+                {mod.icon}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-slate-900 truncate group-hover:text-blue-700 transition-colors">
+                  {mod.title}
+                </div>
+                <div className="text-[11px] text-slate-500 truncate mt-0.5">{mod.desc}</div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 

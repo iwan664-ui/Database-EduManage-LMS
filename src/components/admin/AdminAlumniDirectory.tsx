@@ -12,6 +12,7 @@ import { AlumniDirectoryService } from '../../services/alumniDirectoryService';
 import { SheetsService } from '../../services/sheetsService';
 import { SecurityService } from '../../services/securityService';
 import { AdminAlumniCharts } from './AdminAlumniCharts';
+import { AdminAlumniGraduationTrendChart } from './AdminAlumniGraduationTrendChart';
 import { AdminAlumniGeoMap } from './AdminAlumniGeoMap';
 import { AdminAlumniCampusMap } from './AdminAlumniCampusMap';
 import { AdminAlumniUniversityCategoryMap } from './AdminAlumniUniversityCategoryMap';
@@ -832,6 +833,15 @@ export function AdminAlumniDirectory({
         gradYearFrom={gradYearFrom}
         gradYearTo={gradYearTo}
         onToggleSectorFilter={toggleProfessionCategory}
+        onSelectGradYearFilter={handleChartGradYearSelect}
+      />
+
+      {/* Visualisasi Recharts: Tren Jumlah Lulusan per Tahun (Garis / Batang) */}
+      <AdminAlumniGraduationTrendChart
+        alumni={filteredAlumni}
+        allAlumniCount={allAlumni.length}
+        gradYearFrom={gradYearFrom}
+        gradYearTo={gradYearTo}
         onSelectGradYearFilter={handleChartGradYearSelect}
       />
 

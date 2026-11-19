@@ -17,6 +17,7 @@ import { StudentProgressRadarChart } from './StudentProgressRadarChart';
 import { StudentLeaveRequestView, StudentAchievementPortfolioView } from './StudentSupportViews';
 import { StudentFinanceView } from './StudentFinanceView';
 import { GateAttendanceService } from '../../services/gateAttendanceService';
+import { ParentReportEmailService } from '../../services/parentReportEmailService';
 import {
   User,
   Calendar,
@@ -51,6 +52,7 @@ import {
   Megaphone,
   FileCheck,
   ClipboardCheck,
+  Mail,
 } from 'lucide-react';
 
 export type StudentPortalTab =
@@ -105,7 +107,7 @@ export function StudentPortal({
     setSelectedStudentName(currentUser.name);
   }, [currentUser.name]);
   const [showReportModal, setShowReportModal] = useState<boolean>(false);
-  const [reportModalTab, setReportModalTab] = useState<'rapor' | 'piagam' | 'whatsapp'>('rapor');
+  const [reportModalTab, setReportModalTab] = useState<'rapor' | 'piagam' | 'whatsapp' | 'email'>('rapor');
 
   // Timeframe untuk Grafik Nilai: 'bulan' | 'semester' | 'tahun'
   const [chartTimeframe, setChartTimeframe] = useState<'bulan' | 'semester' | 'tahun'>('bulan');
@@ -486,40 +488,39 @@ export function StudentPortal({
   return (
     <div className="space-y-6">
       {/* Student Profile & Switcher Header */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+      <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-13 h-13 rounded-2xl bg-gradient-to-br from-blue-700 via-blue-800 to-slate-900 border-2 border-orange-400 text-white flex items-center justify-center font-black text-xl shadow-md">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-12 h-12 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-lg shrink-0">
               {studentInfo.siswa.charAt(0)}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-extrabold text-slate-900">{studentInfo.siswa}</h2>
-                <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
-                  Siswa & Orang Tua
-                </span>
-                <span className="hidden sm:inline-block text-[11px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-200">
-                  KKM 85
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <h2 className="text-base sm:text-lg font-bold text-slate-900 truncate">
+                  {studentInfo.siswa}
+                </h2>
+                <span className="text-xs font-semibold text-emerald-700">
+                  Portal Santri &amp; Wali Murid
                 </span>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY · {studentInfo.email_siswa} · {studentInfo.cabang}
+              <p className="text-xs text-slate-500 mt-0.5 truncate">
+                AL-WILDAN 3 BSD CITY · {studentInfo.cabang} · {studentInfo.email_siswa} · Standar KKM {KKM_STANDARD}
               </p>
             </div>
           </div>
 
-          {/* Quick Prestige Actions & Switcher Siswa */}
-          <div className="flex flex-wrap items-center gap-2.5">
+          {/* Quick Actions & Switcher Siswa */}
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={() => {
                 setReportModalTab('rapor');
                 setShowReportModal(true);
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Award className="w-3.5 h-3.5 text-orange-300" />
-              <span>E-Rapor & Piagam</span>
+              <Award className="w-3.5 h-3.5 text-amber-300" />
+              <span>E-Rapor &amp; Piagam</span>
             </button>
 
             <button
@@ -528,21 +529,24 @@ export function StudentPortal({
                 setReportModalTab('whatsapp');
                 setShowReportModal(true);
               }}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow flex items-center gap-1.5 transition-all"
+              className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-700 hover:bg-emerald-800 text-white flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Kirim WhatsApp</span>
             </button>
 
-            <div className="flex items-center gap-1.5 pl-1">
-              <span className="text-xs text-slate-500 whitespace-nowrap font-medium">Siswa:</span>
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="student-switcher" className="text-xs text-slate-500 whitespace-nowrap font-medium">
+                Santri:
+              </label>
               <select
+                id="student-switcher"
                 value={selectedStudentName}
                 onChange={(e) => {
                   setSelectedStudentName(e.target.value);
                   if (onSelectOtherStudent) onSelectOtherStudent(e.target.value);
                 }}
-                className="text-xs font-semibold rounded-xl border border-slate-300 px-3 py-2 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-xs"
+                className="text-xs font-semibold rounded-xl border border-slate-200 px-3 py-2 bg-slate-50 hover:bg-white focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:border-emerald-600"
               >
                 {uniqueStudents.map((s, idx) => (
                   <option key={`stu_portal_${s.siswa}_${idx}`} value={s.siswa}>
@@ -554,212 +558,73 @@ export function StudentPortal({
           </div>
         </div>
 
-        {/* Navigation Tabs (Hidden when controlled by Left Sidebar) */}
+        {/* Navigation Tabs (Fallback when rendered standalone without Sidebar) */}
         {!hideTopTabs && (
-          <div className="flex flex-wrap border-t border-slate-100 pt-3 gap-2">
-          <button
-            onClick={() => setActiveTab('radar')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'radar'
-                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Target className="w-3.5 h-3.5 text-orange-400" />
-            Potensi 360°
-          </button>
-
-          <button
-            onClick={() => setActiveTab('mutabaah')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'mutabaah'
-                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Flame className="w-3.5 h-3.5 text-orange-500" />
-            Mutaba'ah & Tahfidz
-          </button>
-
-          <button
-            onClick={() => setActiveTab('cbt')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'cbt'
-                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
-                : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
-            }`}
-          >
-            <FileQuestion className="w-3.5 h-3.5 text-orange-400" />
-            Ujian CBT (KKM 85)
-          </button>
-
-          <button
-            onClick={() => setActiveTab('tugas')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'tugas'
-                ? 'bg-blue-700 text-white shadow-sm ring-2 ring-blue-700/30'
-                : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
-            }`}
-          >
-            <FileCheck className="w-3.5 h-3.5 text-orange-400" />
-            Tugas & PR
-          </button>
-
-          <button
-            onClick={() => setActiveTab('virtual')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'virtual'
-                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
-                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
-            }`}
-          >
-            <Video className="w-3.5 h-3.5 text-emerald-600" />
-            Kelas Virtual & Forum
-          </button>
-
-          <button
-            onClick={() => setActiveTab('maktabah')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'maktabah'
-                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
-                : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
-            Digital Maktabah
-          </button>
-
-          <button
-            onClick={() => setActiveTab('adab')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'adab'
-                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
-                : 'bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200'
-            }`}
-          >
-            <Star className="w-3.5 h-3.5 text-amber-500" />
-            Bintang Akhlak & Adab
-          </button>
-
-          <button
-            onClick={() => setActiveTab('pengumuman')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'pengumuman'
-                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
-                : 'bg-orange-50 text-orange-800 hover:bg-orange-100 border border-orange-200'
-            }`}
-          >
-            <Megaphone className="w-3.5 h-3.5 text-orange-500" />
-            Pengumuman
-          </button>
-
-          <button
-            onClick={() => setActiveTab('kartu')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'kartu'
-                ? 'bg-blue-700 text-white shadow-sm ring-2 ring-blue-700/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <IdCard className="w-3.5 h-3.5 text-blue-500" />
-            Kartu Santri Smart ID
-          </button>
-
-          <button
-            onClick={() => setActiveTab('jadwal')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-              activeTab === 'jadwal'
-                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5 text-orange-500" />
-            Jadwal KBM
-          </button>
-
-          <button
-            onClick={() => setActiveTab('grafik')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
-              activeTab === 'grafik'
-                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <BarChart2 className="w-3.5 h-3.5 text-blue-500" />
-            Grafik Nilai (KKM 85)
-          </button>
-
-          <button
-            onClick={() => setActiveTab('ekskul')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
-              activeTab === 'ekskul'
-                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Compass className="w-3.5 h-3.5 text-emerald-500" />
-            Ekstrakurikuler ({studentEkskul.length})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('harian')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
-              activeTab === 'harian'
-                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            Report Harian
-          </button>
-
-          <button
-            onClick={() => setActiveTab('pekanan')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
-              activeTab === 'pekanan'
-                ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />
-            Rapor Pekanan
-          </button>
-
-          <button
-            onClick={() => setActiveTab('bulanan')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
-              activeTab === 'bulanan'
-                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-            Rapor Bulanan
-          </button>
-
-          <button
-            onClick={() => setActiveTab('tengah-semester')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
-              activeTab === 'tengah-semester'
-                ? 'bg-orange-500 text-white shadow-sm ring-2 ring-orange-500/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <ClipboardCheck className="w-3.5 h-3.5 text-orange-500" />
-            Rapor PTS
-          </button>
-
-          <button
-            onClick={() => setActiveTab('semester')}
-            className={`py-2 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs ${
-              activeTab === 'semester'
-                ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-600/30'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-            }`}
-          >
-            <Award className="w-3.5 h-3.5 text-blue-500" />
-            Rapor Semester
-          </button>
+          <div className="border-t border-slate-100 pt-3.5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              {
+                heading: 'Ringkasan & Kehadiran',
+                items: [
+                  { id: 'radar' as StudentPortalTab, label: 'Potensi 360°', icon: <Target className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'harian' as StudentPortalTab, label: 'Report Harian', icon: <Clock className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'hadir-pulang' as StudentPortalTab, label: 'Jam Hadir & Pulang', icon: <Clock className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'jadwal' as StudentPortalTab, label: 'Jadwal KBM', icon: <Calendar className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'pengumuman' as StudentPortalTab, label: 'Pengumuman', icon: <Megaphone className="w-3.5 h-3.5 shrink-0" /> },
+                ],
+              },
+              {
+                heading: 'Nilai & Rapor',
+                items: [
+                  { id: 'grafik' as StudentPortalTab, label: 'Grafik Nilai (KKM 85)', icon: <BarChart2 className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'pekanan' as StudentPortalTab, label: 'Rapor Pekanan', icon: <MessageSquare className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'bulanan' as StudentPortalTab, label: 'Rapor Bulanan', icon: <TrendingUp className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'tengah-semester' as StudentPortalTab, label: 'Rapor PTS', icon: <ClipboardCheck className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'semester' as StudentPortalTab, label: 'Rapor Semester', icon: <Award className="w-3.5 h-3.5 shrink-0" /> },
+                ],
+              },
+              {
+                heading: 'Kepesantrenan & Profil',
+                items: [
+                  { id: 'mutabaah' as StudentPortalTab, label: "Mutaba'ah & Tahfidz", icon: <Flame className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'adab' as StudentPortalTab, label: 'Bintang Akhlak & Adab', icon: <Star className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'ekskul' as StudentPortalTab, label: `Ekstrakurikuler (${studentEkskul.length})`, icon: <Compass className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'kartu' as StudentPortalTab, label: 'Kartu Santri Smart ID', icon: <IdCard className="w-3.5 h-3.5 shrink-0" /> },
+                ],
+              },
+              {
+                heading: 'Pembelajaran Digital',
+                items: [
+                  { id: 'cbt' as StudentPortalTab, label: 'Ujian CBT (KKM 85)', icon: <FileQuestion className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'tugas' as StudentPortalTab, label: 'Tugas & PR', icon: <FileCheck className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'virtual' as StudentPortalTab, label: 'Kelas Virtual & Forum', icon: <Video className="w-3.5 h-3.5 shrink-0" /> },
+                  { id: 'maktabah' as StudentPortalTab, label: 'Digital Maktabah', icon: <BookOpen className="w-3.5 h-3.5 shrink-0" /> },
+                ],
+              },
+            ].map((group) => (
+              <div key={group.heading} className="space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 px-1">{group.heading}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {group.items.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`py-1.5 px-2.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                          isActive
+                            ? 'bg-emerald-700 text-white font-semibold'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200/80'
+                        }`}
+                      >
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -808,28 +673,30 @@ export function StudentPortal({
       </div>
 
       {/* Live Gate Attendance Strip (Orang Tua melihat Jam Masuk & Jam Pulang Hari Ini secara langsung) */}
-      <div className="bg-gradient-to-r from-emerald-50 via-white to-orange-50 rounded-2xl border border-emerald-200/80 p-3.5 sm:p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-600 text-white font-black text-[11px] shadow-2xs">
-            <Clock className="w-3.5 h-3.5" />
+      <div className="bg-white rounded-2xl border border-slate-200 p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+          <div className="inline-flex items-center gap-1.5 font-semibold text-slate-900">
+            <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>Status Gerbang Hari Ini</span>
-          </span>
+          </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 font-semibold">Jam Hadir:</span>
-            <span className="font-mono font-black text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-lg">
+          <span className="text-slate-300 hidden sm:inline" aria-hidden="true">·</span>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-500 font-medium">Jam Hadir:</span>
+            <span className="font-mono font-bold text-emerald-700 tabular-nums">
               {todayGateLog?.jam_masuk ? `${todayGateLog.jam_masuk.slice(0, 5)} WIB` : 'Belum Scan'}
             </span>
             {todayGateLog?.status_masuk && (
-              <span className="text-[10px] font-bold text-slate-600">({todayGateLog.status_masuk})</span>
+              <span className="text-[11px] font-medium text-slate-500">({todayGateLog.status_masuk})</span>
             )}
           </div>
 
-          <span className="text-slate-300 hidden sm:inline">|</span>
+          <span className="text-slate-300 hidden sm:inline" aria-hidden="true">·</span>
 
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 font-semibold">Jam Pulang:</span>
-            <span className="font-mono font-black text-orange-800 bg-orange-100 px-2.5 py-0.5 rounded-lg">
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-500 font-medium">Jam Pulang:</span>
+            <span className="font-mono font-bold text-slate-800 tabular-nums">
               {todayGateLog?.jam_pulang
                 ? `${todayGateLog.jam_pulang.slice(0, 5)} WIB`
                 : todayGateLog?.jam_masuk
@@ -842,9 +709,9 @@ export function StudentPortal({
         <button
           type="button"
           onClick={() => setActiveTab('hadir-pulang')}
-          className="py-1.5 px-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold flex items-center gap-1.5 self-start sm:self-auto cursor-pointer transition-all shrink-0"
+          className="py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-semibold flex items-center gap-1.5 self-start sm:self-auto whitespace-nowrap shrink-0 cursor-pointer transition-colors"
         >
-          <span>Lihat Riwayat Hadir & Pulang</span>
+          <span>Riwayat Hadir &amp; Pulang</span>
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -1855,6 +1722,57 @@ export function StudentPortal({
       {/* ============================================================== */}
       {activeTab === 'bulanan' && (
         <div className="space-y-5">
+          {/* Status Email Wali Santri untuk Rapor Bulanan */}
+          {(() => {
+            const guardianEmail = ParentReportEmailService.getGuardianEmail(
+              selectedStudentName,
+              studentInfo.email_siswa,
+              studentInfo.email_wali
+            );
+            const studentEmailLogs = ParentReportEmailService.getMonthlyEmailLogs().filter(
+              (l) => l.siswa.toLowerCase().trim() === selectedStudentName.toLowerCase().trim()
+            );
+            const latestLog = studentEmailLogs[0];
+
+            return (
+              <div className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                    <Mail className="w-4 h-4 text-blue-600" />
+                    <span>Pengiriman Rapor Bulanan ke Email Wali Santri</span>
+                  </div>
+                  <div className="text-xs text-slate-600 flex flex-wrap items-center gap-2">
+                    <span>
+                      Email Wali Terdaftar: <span className="font-mono font-bold text-blue-700">{guardianEmail}</span>
+                    </span>
+                    {latestLog && (
+                      <>
+                        <span className="text-slate-300" aria-hidden="true">·</span>
+                        <span className="text-emerald-700 font-semibold">
+                          Terakhir dikirim ({latestLog.bulan} {latestLog.tahun}) pada{' '}
+                          <span className="font-mono tabular-nums">
+                            {new Date(latestLog.dikirim_pada).toLocaleDateString('id-ID')}
+                          </span>
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReportModalTab('email');
+                    setShowReportModal(true);
+                  }}
+                  className="py-2 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer transition-colors"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  <span>Kirim / Lihat Email Rapor</span>
+                </button>
+              </div>
+            );
+          })()}
+
           {/* Visual Rekap Kehadiran */}
           <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-slate-900">

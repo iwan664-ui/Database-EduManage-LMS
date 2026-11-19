@@ -459,7 +459,8 @@ app.post('/api/sheets-proxy', apiRateLimiter, requireAuth(), async (req, res) =>
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutMs = safeAction === 'sendReportEmails' ? 25000 : 15000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const fetchOptions: RequestInit = {

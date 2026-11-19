@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { WeeklyReportItem } from '../../types';
 import { WeeklyReportService } from '../../services/weeklyReportService';
+import { ParentReportEmailService } from '../../services/parentReportEmailService';
 import { PdfExportService } from '../../services/pdfExportService';
 import { useToast } from '../Toast';
 import {
@@ -14,6 +15,7 @@ import {
   Sparkles,
   UserCheck,
   Inbox,
+  Mail,
 } from 'lucide-react';
 
 interface StudentWeeklyReportsViewProps {
@@ -25,6 +27,7 @@ export function StudentWeeklyReportsView({ studentName }: StudentWeeklyReportsVi
   const [reports, setReports] = useState<WeeklyReportItem[]>(() =>
     WeeklyReportService.getAllReports()
   );
+  const guardianEmail = ParentReportEmailService.getGuardianEmail(studentName);
 
   const studentReports = useMemo(() => {
     return reports
@@ -60,7 +63,8 @@ export function StudentWeeklyReportsView({ studentName }: StudentWeeklyReportsVi
             )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Laporan perkembangan belajar pekanan resmi yang dikirimkan oleh guru pengampu kepada orang tua/wali dari Ananda <strong>{studentName}</strong>.
+            Laporan perkembangan belajar pekanan resmi dari guru pengampu untuk Ananda <strong>{studentName}</strong> · Email wali terdaftar:{' '}
+            <span className="font-mono text-blue-700">{guardianEmail}</span>
           </p>
         </div>
       </div>
@@ -108,16 +112,27 @@ export function StudentWeeklyReportsView({ studentName }: StudentWeeklyReportsVi
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-slate-500 flex items-center gap-2 pt-1">
+                    <div className="text-xs text-slate-500 flex flex-wrap items-center gap-2 pt-1">
                       <UserCheck className="w-3.5 h-3.5 text-emerald-600" />
                       <span>
                         Pengirim: <strong className="text-slate-800">{rep.guru}</strong>
                       </span>
-                      <span>·</span>
+                      <span aria-hidden="true">·</span>
                       <Clock className="w-3.5 h-3.5 text-slate-400" />
                       <span>
                         Dikirim {new Date(rep.dikirim_pada).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </span>
+                      {rep.channels.includes('Email') && (rep.email_tujuan || rep.email_ortu) && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span className="inline-flex items-center gap-1 text-blue-700 font-medium">
+                            <Mail className="w-3.5 h-3.5" />
+                            <span>
+                              Dikirim ke <span className="font-mono">{rep.email_tujuan || rep.email_ortu}</span>
+                            </span>
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
 

@@ -95,6 +95,8 @@ function doPost(e) {
       result = deleteSingleNilai(ss, sanitizeText(postData.id_nilai));
     } else if (action === 'setupSheets') {
       result = initializeDatabaseSheets(ss);
+    } else if (action === 'sendReportEmails') {
+      result = sendBatchReportEmails(postData.items || []);
     } else {
       result = { success: false, error: 'Aksi POST tidak dikenali: ' + action };
     }
@@ -103,6 +105,52 @@ function doPost(e) {
   }
 
   return createJsonResponse(result);
+}
+
+/**
+ * Kirim email rapor pekanan/bulanan ke masing-masing email wali santri
+ */
+function sendBatchReportEmails(items) {
+  if (!items || !items.length) {
+    return { success: false, sentCount: 0, failedCount: 0, error: 'Daftar penerima email kosong.' };
+  }
+  var sentCount = 0;
+  var failedCount = 0;
+  var errors = [];
+
+  for (var i = 0; i < items.length; i++) {
+    var item = items[i] || {};
+    var to = sanitizeText(item.to);
+    var subject = sanitizeText(item.subject) || 'Rapor Perkembangan Santri - AL-WILDAN 3 BSD CITY';
+    var body = String(item.body || '').trim();
+
+    if (!to || to.indexOf('@') === -1) {
+      failedCount++;
+      errors.push((item.siswa || 'Santri') + ': Email wali tidak valid');
+      continue;
+    }
+
+    try {
+      MailApp.sendEmail({
+        to: to,
+        subject: subject,
+        body: body,
+        name: 'AL-WILDAN ISLAMIC SCHOOL 3 BSD CITY'
+      });
+      sentCount++;
+    } catch (e) {
+      failedCount++;
+      errors.push((item.siswa || to) + ': ' + e.toString());
+    }
+  }
+
+  return {
+    success: sentCount > 0,
+    sentCount: sentCount,
+    failedCount: failedCount,
+    errors: errors,
+    message: sentCount + ' email rapor berhasil dikirim ke masing-masing wali santri.' + (failedCount > 0 ? ' (' + failedCount + ' gagal)' : '')
+  };
 }
 
 function createJsonResponse(data) {
